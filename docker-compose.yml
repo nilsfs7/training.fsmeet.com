@@ -1,0 +1,56 @@
+services:
+  mysql:
+    image: mariadb:12.1.2
+    container_name: training-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: training
+      MYSQL_USER: training
+      MYSQL_PASSWORD: password
+    ports:
+      - '3309:3306'
+    volumes:
+      - training_mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  adminer:
+    image: adminer:6.2.0
+    container_name: training-adminer
+    restart: unless-stopped
+    ports:
+      - '6080:8080'
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: http://localhost:3005
+        FSMEET_API_URL: https://api.dev.fsmeet.dffb.org/v1
+        NODE_ENV: development
+    ports:
+      - '3005:3005'
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_SITE_URL: http://localhost:3005
+      FSMEET_API_URL: https://api.dev.fsmeet.dffb.org/v1
+      DATABASE_URL: mysql://training:password@mysql:3306/training
+      AUTH_SESSION_SECRET: ${AUTH_SESSION_SECRET:-dev-change-me}
+      FSMEET_OAUTH_CLIENT_ID: ${FSMEET_OAUTH_CLIENT_ID:-training}
+      FSMEET_OAUTH_CLIENT_SECRET: ${FSMEET_OAUTH_CLIENT_SECRET:-}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  training_mariadb_data:
