@@ -3,9 +3,9 @@
 import { useMemo, useState } from "react";
 import { ActivityChart } from "@/components/activity-chart";
 import { CategoryChart } from "@/components/category-chart";
-import { MonthCalendar } from "@/components/month-calendar";
+import { DateField } from "@/components/date-field";
 import { useSessions } from "@/components/use-sessions";
-import { activitySeries, isoDate, monthRange, parseIsoDate, shiftMonth, shiftWeek, shiftYear, summarize, weekRange, yearRange, type ActivitySpan, type PeriodSummary } from "@/lib/stats";
+import { activitySeries, isoDate, monthRange, shiftMonth, shiftWeek, shiftYear, summarize, weekRange, yearRange, type ActivitySpan, type PeriodSummary } from "@/lib/stats";
 
 type PeriodId = "week" | "month" | "year" | "custom";
 
@@ -159,49 +159,6 @@ export function StatsView() {
         <p className="meta">Loading sessions</p>
       )}
     </>
-  );
-}
-
-function DateField({
-  label,
-  value,
-  open,
-  onToggle,
-  onChange,
-  rangeStart,
-  rangeEnd,
-  marked,
-}: {
-  label: string;
-  value: string;
-  open: boolean;
-  onToggle: () => void;
-  onChange: (iso: string) => void;
-  rangeStart: string;
-  rangeEnd: string;
-  marked: ReadonlySet<string>;
-}) {
-  const formatted = parseIsoDate(value).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-  return (
-    <div className="date-field-block">
-      <span>{label}</span>
-      <button type="button" className="date-field" aria-expanded={open} aria-label={`${label}, ${formatted}`} onClick={onToggle}>
-        <span>{formatted}</span>
-        <CalendarIcon />
-      </button>
-      {open ? (
-        <MonthCalendar nested value={value} onChange={onChange} rangeStart={rangeStart} rangeEnd={rangeEnd} marked={marked} />
-      ) : null}
-    </div>
-  );
-}
-
-function CalendarIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="icon">
-      <rect x="4" y="5" width="16" height="15" rx="2" />
-      <path d="M8 3.5v3M16 3.5v3M4 10h16" />
-    </svg>
   );
 }
 
