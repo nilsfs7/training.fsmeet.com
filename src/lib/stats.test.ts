@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  activitySeries,
   monthRange,
   summarize,
   topCategories,
@@ -85,6 +86,53 @@ describe("yearRange", () => {
       start: "2024-01-01",
       end: "2024-12-31",
     });
+  });
+});
+
+describe("activitySeries", () => {
+  const sessions = [
+    session({ trainedOn: "2026-11-02", durationMinutes: 45, categories: ["lowers", "transitions"] }),
+    session({
+      id: "22222222-2222-4222-8222-222222222222",
+      trainedOn: "2026-11-02",
+      durationMinutes: 15,
+      categories: ["uppers"],
+    }),
+    session({
+      id: "55555555-5555-4555-8555-555555555555",
+      trainedOn: "2026-03-10",
+      durationMinutes: 60,
+      categories: ["lowers"],
+    }),
+  ];
+  const today = new Date(2026, 10, 2);
+
+  it("counts each day of the current week", () => {
+    const series = activitySeries(sessions, "week", today);
+    assert.equal(series.length, 7);
+    assert.deepEqual(series.map((point) => point.label), ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
+    assert.equal(series[0].sessions, 2);
+    assert.equal(series[0].minutes, 60);
+    assert.equal(series.slice(1).every((point) => point.sessions === 0), true);
+  });
+
+  it("counts each day of the current month", () => {
+    const series = activitySeries(sessions, "month", today);
+    assert.equal(series.length, 30);
+    assert.equal(series[0].label, "1");
+    assert.equal(series[1].sessions, 2);
+    assert.equal(series[1].minutes, 60);
+    assert.equal(series[0].sessions, 0);
+  });
+
+  it("counts each month of the current year", () => {
+    const series = activitySeries(sessions, "year", today);
+    assert.equal(series.length, 12);
+    assert.equal(series[2].label, "Mar");
+    assert.equal(series[2].sessions, 1);
+    assert.equal(series[2].minutes, 60);
+    assert.equal(series[10].sessions, 2);
+    assert.equal(series[10].minutes, 60);
   });
 });
 

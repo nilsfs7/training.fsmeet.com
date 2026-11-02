@@ -100,3 +100,53 @@ export function shiftMonth(anchor: Date, months: number): Date {
 export function shiftYear(anchor: Date, years: number): Date {
   return new Date(anchor.getFullYear() + years, 0, 1);
 }
+
+export type ActivitySpan = "week" | "month" | "year";
+
+export type ActivityPoint = {
+  label: string;
+  sessions: number;
+  minutes: number;
+};
+
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+export function activitySeries(sessions: Session[], span: ActivitySpan, today: Date): ActivityPoint[] {
+  if (span === "week") {
+    const { start, end } = weekRange(today);
+    const points: ActivityPoint[] = [];
+    let iso = start;
+    for (let index = 0; iso <= end; index += 1) {
+      points.push(bucket(sessions, iso, iso, WEEKDAYS[index]));
+      iso = addDays(iso, 1);
+    }
+    return points;
+  }
+
+  if (span === "month") {
+    const { start, end } = monthRange(today);
+    const points: ActivityPoint[] = [];
+    for (let iso = start; iso <= end; iso = addDays(iso, 1)) {
+      points.push(bucket(sessions, iso, iso, String(Number(iso.slice(8)))));
+    }
+    return points;
+  }
+
+  return Array.from({ length: 12 }, (_, month) => {
+    const anchor = new Date(today.getFullYear(), month, 1);
+    const range = monthRange(anchor);
+    const label = anchor.toLocaleDateString("en-GB", { month: "short" });
+    return bucket(sessions, range.start, range.end, label);
+  });
+}
+
+function bucket(sessions: Session[], start: string, end: string, label: string): ActivityPoint {
+  let sessionCount = 0;
+  let minutes = 0;
+  for (const session of sessions) {
+    if (session.trainedOn < start || session.trainedOn > end) continue;
+    sessionCount += 1;
+    minutes += session.durationMinutes;
+  }
+  return { label, sessions: sessionCount, minutes };
+}

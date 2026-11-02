@@ -54,7 +54,7 @@ The interface is a dark, matte fitness-style diary: modern, minimal, athletic, p
 | UI-06 | Accent | Lime `#C7FF4D`, used sparingly | `must` | `decided` |
 | UI-07 | Type | Inter or Geist as the only primary face | `must` | `decided` |
 | UI-08 | Numbers | Large bold numerals for statistics | `must` | `decided` |
-| UI-09 | Charts | Modern charts for statistics | `must` | `decided` |
+| UI-09 | Charts | Radar chart of the five categories, and lime line charts of session counts (W-07) and minutes (W-08) | `must` | `decided` |
 | UI-10 | Controls | Large touch targets, slightly rounded | `must` | `decided` |
 | UI-11 | Motion | Subtle, fast transitions. No excessive animation | `must` | `decided` |
 | UI-12 | Surface style | Matte, inspired by modern fitness apps | `must` | `decided` |
@@ -149,6 +149,8 @@ These five categories are the training taxonomy for the dashboard and for sessio
 | CAT-04 | transitions | `decided` |
 | CAT-05 | acrobatics | `decided` |
 
+Display order is lowers, uppers, sitdown, acrobatics, transitions.
+
 ## Product shape
 
 The app feels like a training diary. A freestyler opens the phone after training and saves a session within 10 seconds. Do not add plans, programs, drill builders, or other management workflows.
@@ -170,7 +172,7 @@ Primary navigation has three sections. Other screens exist, and they are not pri
 | NAV-05 | Edit Training | Change a saved session. Same fields as capture: date, one duration, categories, optional note | Additional | `must` | `decided` |
 | NAV-06 | Profile / Settings | Account and app settings | Additional | `must` | `decided` |
 
-`NAV-04` is satisfied by a control on Home or by a floating plus button. Either form is acceptable. The visible label is `Log Training`. What Profile / Settings contains is still `open` (Q-13). A saved session can be deleted from Edit Training (S-07).
+`NAV-04` is satisfied by a control on Home or by a floating plus button. Either form is acceptable. The visible label is `Log Training`. Statistics does not show the floating plus button. What Profile / Settings contains is still `open` (Q-13). A saved session can be deleted from Edit Training (S-07).
 
 ## Functional requirements
 
@@ -196,6 +198,8 @@ Logging is after the session for many athletes. Entry must stay short enough to 
 | W-04 | The user can choose a custom date range | `must` | `decided` | Start and end date. Same minutes, session count, and category chart |
 | W-05 | Statistics shows one period at a time | `must` | `decided` | The user switches between week, month, year, and custom so the screen stays short |
 | W-06 | Statistics shows the year | `must` | `decided` | NAV-03. Calendar year. Charts (UI-09). Same counting rule as D-02. Includes the session count (W-03) |
+| W-07 | Statistics shows how many sessions happened over time | `must` | `decided` | Lime line chart. 1 week and 1 month are per day, 1 year is per month. The year axis labels every other month, starting with January. Each session counts once |
+| W-08 | Statistics shows total training minutes over time | `must` | `decided` | Lime line chart. Same spans as W-07. The user switches between the session chart (W-07) and this chart, so only one line chart is visible. A session's duration is counted once |
 
 ## Session fields
 

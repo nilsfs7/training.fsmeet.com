@@ -2,8 +2,8 @@ export const CATEGORIES = [
   "lowers",
   "uppers",
   "sitdown",
-  "transitions",
   "acrobatics",
+  "transitions",
 ] as const;
 
 export type Category = (typeof CATEGORIES)[number];

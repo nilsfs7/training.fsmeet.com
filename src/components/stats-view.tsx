@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ActivityChart } from "@/components/activity-chart";
 import { CategoryChart } from "@/components/category-chart";
 import { MonthCalendar } from "@/components/month-calendar";
 import { useSessions } from "@/components/use-sessions";
-import { isoDate, monthRange, parseIsoDate, shiftMonth, shiftWeek, shiftYear, summarize, weekRange, yearRange, type PeriodSummary } from "@/lib/stats";
+import { activitySeries, isoDate, monthRange, parseIsoDate, shiftMonth, shiftWeek, shiftYear, summarize, weekRange, yearRange, type ActivitySpan, type PeriodSummary } from "@/lib/stats";
 
 type PeriodId = "week" | "month" | "year" | "custom";
 
@@ -15,11 +16,24 @@ const PERIODS: { id: PeriodId; label: string }[] = [
   { id: "custom", label: "Custom" },
 ];
 
+const SPANS: { id: ActivitySpan; label: string }[] = [
+  { id: "week", label: "1 week" },
+  { id: "month", label: "1 month" },
+  { id: "year", label: "1 year" },
+];
+
+const LINE_METRICS = [
+  { id: "sessions", label: "Sessions" },
+  { id: "minutes", label: "Minutes" },
+] as const;
+
 export function StatsView() {
   const { sessions, ready } = useSessions();
   const today = new Date();
   const currentMonth = monthRange(today);
   const [period, setPeriod] = useState<PeriodId>("week");
+  const [span, setSpan] = useState<ActivitySpan>("month");
+  const [lineMetric, setLineMetric] = useState<(typeof LINE_METRICS)[number]["id"]>("sessions");
   const [customStart, setCustomStart] = useState(currentMonth.start);
   const [customEnd, setCustomEnd] = useState(isoDate(today));
   const [openDate, setOpenDate] = useState<"start" | "end" | null>(null);
@@ -38,6 +52,7 @@ export function StatsView() {
   const previousYear = summarize(sessions, yearRange(previousYearAnchor).start, yearRange(previousYearAnchor).end);
   const customReady = /^\d{4}-\d{2}-\d{2}$/.test(customStart) && /^\d{4}-\d{2}-\d{2}$/.test(customEnd) && customStart <= customEnd;
   const custom = customReady ? summarize(sessions, customStart, customEnd) : null;
+  const series = activitySeries(sessions, span, today);
 
   return (
     <>
@@ -109,6 +124,36 @@ export function StatsView() {
               )}
             </section>
           ) : null}
+          <section className="stat-block">
+            <p className="eyebrow">Over time</p>
+            <div className="period-switch line-span" role="group" aria-label="Line chart range">
+              {SPANS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="chip"
+                  aria-pressed={span === item.id}
+                  onClick={() => setSpan(item.id)}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            <div className="period-switch line-span" role="group" aria-label="Line chart value">
+              {LINE_METRICS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="chip"
+                  aria-pressed={lineMetric === item.id}
+                  onClick={() => setLineMetric(item.id)}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            <ActivityChart points={series} metric={lineMetric} />
+          </section>
         </>
       ) : (
         <p className="meta">Loading sessions</p>

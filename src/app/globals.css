@@ -276,30 +276,71 @@ input {
 
 .error { color: var(--danger); margin: 0.5rem 0 0; }
 
-.chart { display: grid; gap: 0.85rem; margin-top: 1rem; }
-
-.bar-label {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.35rem;
-}
-
-.bar-label span { text-transform: capitalize; }
-
-.bar-track {
-  height: 0.7rem;
-  border-radius: 999px;
-  background: var(--elevated);
-  overflow: hidden;
-}
-
-.bar-fill {
+.radar {
   display: block;
-  height: 100%;
-  background: var(--accent);
-  border-radius: inherit;
-  transition: width 160ms ease;
+  width: 100%;
+  height: auto;
+  margin-top: 0.75rem;
+  overflow: visible;
+  font-family: inherit;
 }
+
+.radar-grid, .radar-axis {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.radar-shape {
+  fill: var(--accent);
+  fill-opacity: 0.18;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.radar-label {
+  fill: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.radar-value {
+  fill: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: none;
+}
+
+.line-span { margin-top: 0.85rem; }
+
+.line-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 0.35rem;
+  overflow: visible;
+  font-family: inherit;
+}
+
+.line-grid { stroke: var(--line); stroke-width: 1; }
+
+.line-series {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.line-scale, .line-label {
+  fill: var(--muted);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.line-scale { fill: var(--accent); }
 
 .date-field-block { display: grid; gap: 0.4rem; }
 
