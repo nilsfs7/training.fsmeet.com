@@ -1,8 +1,9 @@
 const encoder = new TextEncoder();
 
 export function fsmeetApiUrl(): string {
-  const configured = process.env.FSMEET_API_URL || "https://api.dev.fsmeet.dffb.org/v1";
-  return configured.replace(/\/$/, "");
+  const configured = process.env.FSMEET_API_URL?.trim().replace(/\/$/, "");
+  if (!configured) throw new Error("FSMEET_API_URL is not set");
+  return configured;
 }
 
 export function clientId(): string {

@@ -20,4 +20,4 @@ npm run dev
 
 Open `http://localhost:3005`. Adminer is on port `6080`. From the host, MariaDB is `127.0.0.1:3309`. Inside Compose it is `mysql:3306`.
 
-The dev server talks to the staging FSMeet API (`https://api.dev.fsmeet.dffb.org/v1`) unless `FSMEET_API_URL` says otherwise.
+Sign-in uses `FSMEET_API_URL` from the environment. Locally that is `.env`. Images get it from CI: staging on `dev`, `https://api.fsmeet.dffb.org/v1` on `main`. The production site is `https://training.fsmeet.com`.
