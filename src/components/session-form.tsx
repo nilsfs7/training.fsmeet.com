@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { CATEGORIES, type Category, type Session } from "@/lib/types";
+import { useMemo, useState } from "react";
+import { DateField } from "@/components/date-field";
+import { useSessions } from "@/components/use-sessions";
 import { isoDate } from "@/lib/stats";
+import { CATEGORIES, type Category, type Session } from "@/lib/types";
 
 const PRESETS = [15, 30, 45, 60, 90, 120];
 
@@ -21,8 +23,11 @@ export function SessionForm({
   const [duration, setDuration] = useState(() => (initial ? String(initial.durationMinutes) : ""));
   const [categories, setCategories] = useState<Category[]>(() => initial?.categories ?? []);
   const [note, setNote] = useState(() => initial?.note ?? "");
+  const [dateOpen, setDateOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { sessions } = useSessions();
+  const marked = useMemo(() => new Set(sessions.map((session) => session.trainedOn)), [sessions]);
   const durationMinutes = Number(duration);
   const ready = Number.isInteger(durationMinutes) && durationMinutes >= 1 && durationMinutes <= 1440 && categories.length > 0;
 
@@ -54,10 +59,17 @@ export function SessionForm({
     <form onSubmit={onSubmit}>
       <h1>{title}</h1>
       <div className="stack">
-        <label>
-          Date
-          <input type="date" value={trainedOn} onChange={(event) => setTrainedOn(event.target.value)} required />
-        </label>
+        <DateField
+          label="Date"
+          value={trainedOn}
+          open={dateOpen}
+          onToggle={() => setDateOpen((open) => !open)}
+          onChange={(iso) => {
+            setTrainedOn(iso);
+            setDateOpen(false);
+          }}
+          marked={marked}
+        />
         <label>
           Duration
           <input
