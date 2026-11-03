@@ -1,6 +1,6 @@
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { ensureSchema, getPool } from "@/lib/db";
-import { isCategory, type Category, type Session } from "@/lib/types";
+import { feelingForStorage, feelingFromStored, isCategory, isFeelingScore, type Category, type FeelingScore, type Session } from "@/lib/types";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -32,6 +32,18 @@ export function parseSession(input: unknown): Session {
     }
     categories.push(category);
   }
+  let feeling: FeelingScore | null = null;
+  if (value.feeling == null) {
+    feeling = null;
+  } else if (isFeelingScore(value.feeling)) {
+    feeling = value.feeling;
+  } else if (typeof value.feeling === "string") {
+    const stored = feelingFromStored(value.feeling);
+    if (stored == null) throw new SessionInputError("Feeling is invalid");
+    feeling = stored;
+  } else {
+    throw new SessionInputError("Feeling is invalid");
+  }
   let note: string | null = null;
   if (typeof value.note === "string") {
     const trimmed = value.note.trim();
@@ -48,6 +60,7 @@ export function parseSession(input: unknown): Session {
     trainedOn: value.trainedOn,
     durationMinutes: value.durationMinutes,
     categories,
+    feeling,
     note,
     createdAt,
   };
@@ -57,6 +70,7 @@ type SessionRow = RowDataPacket & {
   id: string;
   trained_on: string;
   duration_minutes: number;
+  feeling: string | null;
   note: string | null;
   created_at: string;
   category: string | null;
@@ -65,7 +79,7 @@ type SessionRow = RowDataPacket & {
 export async function listSessions(userId: string): Promise<Session[]> {
   await ensureSchema();
   const [rows] = await getPool().query<SessionRow[]>(
-    `SELECT s.id, s.trained_on, s.duration_minutes, s.note, s.created_at, c.category
+    `SELECT s.id, s.trained_on, s.duration_minutes, s.feeling, s.note, s.created_at, c.category
      FROM sessions s
      LEFT JOIN session_categories c ON c.session_id = s.id
      WHERE s.user_id = ?
@@ -80,6 +94,7 @@ export async function listSessions(userId: string): Promise<Session[]> {
       trainedOn: String(row.trained_on).slice(0, 10),
       durationMinutes: Number(row.duration_minutes),
       categories: [],
+      feeling: feelingFromStored(row.feeling),
       note: row.note,
       createdAt: new Date(String(row.created_at).replace(" ", "T") + "Z").toISOString(),
     };
@@ -118,16 +133,16 @@ export async function saveSessions(userId: string, sessions: Session[]): Promise
       }
       if (existing.length === 0) {
         await connection.query<ResultSetHeader>(
-          `INSERT INTO sessions (id, user_id, trained_on, duration_minutes, note, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))`,
-          [session.id, userId, session.trainedOn, session.durationMinutes, session.note, sqlDateTime(session.createdAt)],
+          `INSERT INTO sessions (id, user_id, trained_on, duration_minutes, feeling, note, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))`,
+          [session.id, userId, session.trainedOn, session.durationMinutes, feelingForStorage(session.feeling), session.note, sqlDateTime(session.createdAt)],
         );
       } else {
         await connection.query(
           `UPDATE sessions
-           SET trained_on = ?, duration_minutes = ?, note = ?, updated_at = UTC_TIMESTAMP(3)
+           SET trained_on = ?, duration_minutes = ?, feeling = ?, note = ?, updated_at = UTC_TIMESTAMP(3)
            WHERE id = ? AND user_id = ?`,
-          [session.trainedOn, session.durationMinutes, session.note, session.id, userId],
+          [session.trainedOn, session.durationMinutes, feelingForStorage(session.feeling), session.note, session.id, userId],
         );
       }
       await connection.query("DELETE FROM session_categories WHERE session_id = ?", [session.id]);

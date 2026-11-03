@@ -1,4 +1,4 @@
-import { CATEGORIES, type Category, type Session } from "@/lib/types";
+import { CATEGORIES, type Category, type DurationUnit, type Session } from "@/lib/types";
 
 export type CategoryTotals = Record<Category, number>;
 
@@ -6,6 +6,7 @@ export type PeriodSummary = {
   totalMinutes: number;
   sessionCount: number;
   dayCount: number;
+  averageFeeling: number | null;
   byCategory: CategoryTotals;
 };
 
@@ -62,12 +63,18 @@ export function summarize(sessions: Session[], start: string, end: string): Peri
   const days = new Set<string>();
   let totalMinutes = 0;
   let sessionCount = 0;
+  let feelingTotal = 0;
+  let feelingCount = 0;
 
   for (const session of sessions) {
     if (session.trainedOn < start || session.trainedOn > end) continue;
     sessionCount += 1;
     totalMinutes += session.durationMinutes;
     days.add(session.trainedOn);
+    if (session.feeling != null) {
+      feelingTotal += session.feeling;
+      feelingCount += 1;
+    }
     for (const category of session.categories) {
       byCategory[category] += session.durationMinutes;
     }
@@ -77,8 +84,24 @@ export function summarize(sessions: Session[], start: string, end: string): Peri
     totalMinutes,
     sessionCount,
     dayCount: days.size,
+    averageFeeling: feelingCount === 0 ? null : feelingTotal / feelingCount,
     byCategory,
   };
+}
+
+export function formatDuration(minutes: number, unit: DurationUnit): string {
+  if (unit === "minutes") return String(minutes);
+  const hours = Math.round((minutes / 60) * 100) / 100;
+  return String(hours);
+}
+
+export function durationSuffix(unit: DurationUnit): string {
+  return unit === "hours" ? "h" : "min";
+}
+
+export function formatFeeling(value: number): string {
+  const rounded = Math.round(value * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
 }
 
 export function topCategories(totals: CategoryTotals): Category[] {
@@ -107,6 +130,7 @@ export type ActivityPoint = {
   label: string;
   sessions: number;
   minutes: number;
+  feeling: number | null;
 };
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -140,13 +164,28 @@ export function activitySeries(sessions: Session[], span: ActivitySpan, today: D
   });
 }
 
+export function feelingSeries(points: ActivityPoint[]): ActivityPoint[] {
+  return points.filter((point) => point.feeling != null);
+}
+
 function bucket(sessions: Session[], start: string, end: string, label: string): ActivityPoint {
   let sessionCount = 0;
   let minutes = 0;
+  let feelingTotal = 0;
+  let feelingCount = 0;
   for (const session of sessions) {
     if (session.trainedOn < start || session.trainedOn > end) continue;
     sessionCount += 1;
     minutes += session.durationMinutes;
+    if (session.feeling != null) {
+      feelingTotal += session.feeling;
+      feelingCount += 1;
+    }
   }
-  return { label, sessions: sessionCount, minutes };
+  return {
+    label,
+    sessions: sessionCount,
+    minutes,
+    feeling: feelingCount === 0 ? null : feelingTotal / feelingCount,
+  };
 }

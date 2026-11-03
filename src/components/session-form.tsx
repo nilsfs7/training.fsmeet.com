@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { DateField } from "@/components/date-field";
+import { FeelingChoices, ScoreChoices } from "@/components/feeling-face";
+import { useFeelingInput } from "@/components/feeling-input";
 import { useSessions } from "@/components/use-sessions";
 import { isoDate } from "@/lib/stats";
-import { CATEGORIES, type Category, type Session } from "@/lib/types";
+import { CATEGORIES, type Category, type FeelingScore, type Session } from "@/lib/types";
 
 const PRESETS = [15, 30, 45, 60, 90, 120];
 
@@ -16,12 +18,14 @@ export function SessionForm({
 }: {
   title: string;
   submitLabel: string;
-  initial?: Pick<Session, "trainedOn" | "durationMinutes" | "categories" | "note">;
+  initial?: Pick<Session, "trainedOn" | "durationMinutes" | "categories" | "feeling" | "note">;
   onSave: (input: Omit<Session, "id" | "createdAt">) => Promise<void>;
 }) {
   const [trainedOn, setTrainedOn] = useState(() => initial?.trainedOn ?? isoDate(new Date()));
   const [duration, setDuration] = useState(() => (initial ? String(initial.durationMinutes) : ""));
   const [categories, setCategories] = useState<Category[]>(() => initial?.categories ?? []);
+  const { feelingInput } = useFeelingInput();
+  const [feeling, setFeeling] = useState<FeelingScore | null>(() => initial?.feeling ?? null);
   const [note, setNote] = useState(() => initial?.note ?? "");
   const [dateOpen, setDateOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -47,6 +51,7 @@ export function SessionForm({
         trainedOn,
         durationMinutes,
         categories,
+        feeling,
         note: note.trim() ? note.trim() : null,
       });
     } catch {
@@ -109,6 +114,11 @@ export function SessionForm({
             </button>
           ))}
         </div>
+        {feelingInput === "score" ? (
+          <ScoreChoices value={feeling} onChange={setFeeling} />
+        ) : (
+          <FeelingChoices value={feeling} onChange={setFeeling} />
+        )}
         <label>
           Note
           <input value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional" maxLength={2000} />

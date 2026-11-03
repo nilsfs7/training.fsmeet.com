@@ -11,7 +11,7 @@ const LINKS = [
 
 export function Shell({ name, children }: { name: string; children: React.ReactNode }) {
   const pathname = usePathname();
-  const hideFab = pathname === "/" || pathname === "/log" || pathname.startsWith("/edit") || pathname.startsWith("/statistics");
+  const hideFab = pathname === "/" || pathname === "/log" || pathname === "/profile" || pathname.startsWith("/edit") || pathname.startsWith("/statistics");
 
   useEffect(() => {
     if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
