@@ -54,7 +54,7 @@ The interface is a dark, matte fitness-style diary: modern, minimal, athletic, p
 | UI-06 | Accent | Lime `#C7FF4D`, used sparingly | `must` | `decided` |
 | UI-07 | Type | Inter or Geist as the only primary face | `must` | `decided` |
 | UI-08 | Numbers | Large bold numerals for statistics | `must` | `decided` |
-| UI-09 | Charts | Radar chart of the five categories, and lime line charts of session counts (W-07) and minutes (W-08) | `must` | `decided` |
+| UI-09 | Charts | Radar chart of the five categories, and lime line charts of session counts (W-07), minutes (W-08), and feeling (W-09) | `must` | `decided` |
 | UI-10 | Controls | Large touch targets, slightly rounded | `must` | `decided` |
 | UI-11 | Motion | Subtle, fast transitions. No excessive animation | `must` | `decided` |
 | UI-12 | Surface style | Matte, inspired by modern fitness apps | `must` | `decided` |
@@ -169,10 +169,10 @@ Primary navigation has three sections. Other screens exist, and they are not pri
 | NAV-02 | History | Sessions | Primary | `must` | `decided` |
 | NAV-03 | Statistics | Progress | Primary | `must` | `decided` |
 | NAV-04 | Log Training | Capture a session. Reachable from every primary section | Additional | `must` | `decided` |
-| NAV-05 | Edit Training | Change a saved session. Same fields as capture: date, one duration, categories, optional note | Additional | `must` | `decided` |
+| NAV-05 | Edit Training | Change a saved session. Same fields as capture: date, one duration, categories, optional feeling, optional note | Additional | `must` | `decided` |
 | NAV-06 | Profile / Settings | Account and app settings | Additional | `must` | `decided` |
 
-`NAV-04` is satisfied by a control on Home or by a floating plus button. Either form is acceptable. The visible label is `Log Training`. Statistics does not show the floating plus button. What Profile / Settings contains is still `open` (Q-13). A saved session can be deleted from Edit Training (S-07).
+`NAV-04` is satisfied by a control on Home or by a floating plus button. Either form is acceptable. The visible label is `Log Training`. Statistics and Profile / Settings do not show the floating plus button. Profile / Settings includes the feeling entry preference (S-09) and the duration unit (W-10). Anything else on that screen is still `open` (Q-13). A saved session can be deleted from Edit Training (S-07).
 
 ## Functional requirements
 
@@ -187,8 +187,10 @@ Logging is after the session for many athletes. Entry must stay short enough to 
 | S-03 | Session has one or more categories, multi-select | `must` | `decided` | CAT-01 … CAT-05. The same duration applies to every selected category |
 | S-04 | Session note is optional | `must` | `decided` | Skipping it must not add a step |
 | S-05 | Session has a date so it can be logged after the fact and shown in History | `must` | `decided` | Defaults to today |
-| S-06 | A signed-in user can save a session within 10 seconds of opening the app | `must` | `decided` | Date, duration, categories. Note stays optional |
+| S-06 | A signed-in user can save a session within 10 seconds of opening the app | `must` | `decided` | Date, duration, categories. Note and feeling stay optional |
 | S-07 | A saved session can be deleted | `must` | `decided` | From Edit Training. Leaves the phone immediately, including offline. MariaDB drops it on the next sync |
+| S-08 | A session can record how the training felt | `must` | `decided` | Optional. Five levels, shown as emojis: red, orange, yellow, green, dark green. They are scores on the 1–10 scale: red 1, orange 3, yellow 5, green 8, dark green 10. Skipping it stores null. History shows the emoji for these five scores |
+| S-09 | Feeling can also be a score from 1 to 10 | `must` | `decided` | 1 is the worst, 10 is the best. Optional, same as S-08. Any integer in that range. The emoji levels are 1, 3, 5, 8 and 10. Account settings choose the control. The choice is stored on the user in MariaDB. Default is the five emojis. A session without a feeling stays null. History shows the numeral for 2, 4, 6, 7 and 9 |
 | D-01 | Home shows training time | `must` | `decided` | Large numerals (UI-08). Not a separate main area |
 | D-02 | Home shows the five categories | `must` | `decided` | A session counts toward each selected category. Headline training time counts each session once |
 | C-01 | History shows past training sessions | `must` | `decided` | NAV-02. Includes the calendar of past sessions |
@@ -199,7 +201,9 @@ Logging is after the session for many athletes. Entry must stay short enough to 
 | W-05 | Statistics shows one period at a time | `must` | `decided` | The user switches between week, month, year, and custom so the screen stays short |
 | W-06 | Statistics shows the year | `must` | `decided` | NAV-03. Calendar year. Charts (UI-09). Same counting rule as D-02. Includes the session count (W-03) |
 | W-07 | Statistics shows how many sessions happened over time | `must` | `decided` | Lime line chart. 1 week and 1 month are per day, 1 year is per month. The year axis labels every other month, starting with January. Each session counts once |
-| W-08 | Statistics shows total training minutes over time | `must` | `decided` | Lime line chart. Same spans as W-07. The user switches between the session chart (W-07) and this chart, so only one line chart is visible. A session's duration is counted once |
+| W-08 | Statistics shows total training minutes over time | `must` | `decided` | Lime line chart. Same spans as W-07. The user switches between the session chart (W-07), this chart, and the feeling chart (W-09), so only one line chart is visible. A session's duration is counted once |
+| W-09 | Statistics shows how training felt | `must` | `decided` | The selected period shows the average feeling. Only sessions with a feeling count; a session without one stays out of the average. The lime line chart uses the same spans as W-07. Each point is the average feeling in that day or month, on a fixed scale from 1 to 10. Days or months with no session, and days or months whose sessions have no feeling, are left out. The remaining points form one continuous line |
+| W-10 | Duration can be shown in hours or minutes | `must` | `decided` | Account settings choose the unit. Stored on the user in MariaDB. Default is hours. Applies wherever training time is shown: Home, History, and Statistics, including the category chart and the duration line chart (W-08). The Home and Statistics headlines spell the unit out as hours or minutes. Logging and editing still enter minutes |
 
 ## Session fields
 
@@ -208,6 +212,7 @@ Logging is after the session for many athletes. Entry must stay short enough to 
 | Date | yes | 2026-11-01, default today | `decided` |
 | Duration | yes | 45 min, once for the whole session | `decided` |
 | Categories | yes, one or more | lowers, transitions | `decided` |
+| Feeling | no | 8, or null. A score from 1 to 10. Emoji levels are 1, 3, 5, 8 and 10 | `decided` |
 | Note | no | ATW on the left still messy | `decided` |
 
 ## Offline

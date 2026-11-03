@@ -1,4 +1,4 @@
-import type { LocalSession, Session } from "@/lib/types";
+import { feelingFromStored, isFeelingScore, type FeelingScore, type LocalSession, type Session } from "@/lib/types";
 
 const DB_NAME = "fs-training";
 const STORE = "sessions";
@@ -15,6 +15,14 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
+function normalizeFeeling(session: LocalSession): LocalSession {
+  const raw = session.feeling as FeelingScore | string | null | undefined;
+  if (raw == null) return { ...session, feeling: null };
+  if (isFeelingScore(raw)) return { ...session, feeling: raw };
+  if (typeof raw === "string") return { ...session, feeling: feelingFromStored(raw) };
+  return { ...session, feeling: null };
+}
+
 function requestToPromise<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
@@ -26,7 +34,7 @@ export async function readLocalSessions(): Promise<LocalSession[]> {
   const db = await openDb();
   const rows = await requestToPromise(db.transaction(STORE, "readonly").objectStore(STORE).getAll());
   db.close();
-  return (rows as LocalSession[]).sort((a, b) => {
+  return (rows as LocalSession[]).map(normalizeFeeling).sort((a, b) => {
     if (a.trainedOn !== b.trainedOn) return a.trainedOn < b.trainedOn ? 1 : -1;
     return a.createdAt < b.createdAt ? 1 : -1;
   });

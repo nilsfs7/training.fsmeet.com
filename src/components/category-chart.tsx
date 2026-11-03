@@ -1,5 +1,5 @@
-import { CATEGORIES, type Category } from '@/lib/types';
-import type { CategoryTotals } from '@/lib/stats';
+import { CATEGORIES, type Category, type DurationUnit } from '@/lib/types';
+import { durationSuffix, formatDuration, type CategoryTotals } from '@/lib/stats';
 
 const CX = 160;
 const CY = 152;
@@ -25,13 +25,14 @@ function points(ratio: number): string {
   }).join(' ');
 }
 
-export function CategoryChart({ totals }: { totals: CategoryTotals }) {
+export function CategoryChart({ totals, unit = "minutes" }: { totals: CategoryTotals; unit?: DurationUnit }) {
   const peak = Math.max(...CATEGORIES.map(category => totals[category]), 1);
   const shape = CATEGORIES.map((category, index) => {
     const point = at(index, totals[category] / peak);
     return `${point.x.toFixed(1)},${point.y.toFixed(1)}`;
   }).join(' ');
-  const summary = CATEGORIES.map(category => `${category} ${totals[category]} min`).join(', ');
+  const suffix = durationSuffix(unit);
+  const summary = CATEGORIES.map(category => `${category} ${formatDuration(totals[category], unit)} ${suffix}`).join(', ');
 
   return (
     <svg className="radar" viewBox="-28 -6 376 324" role="img" aria-label={summary}>
@@ -53,7 +54,7 @@ export function CategoryChart({ totals }: { totals: CategoryTotals }) {
               {category}
             </tspan>
             <tspan className="radar-value" x={point.x} dy="15">
-              {totals[category]} min
+              {formatDuration(totals[category], unit)} {suffix}
             </tspan>
           </text>
         );

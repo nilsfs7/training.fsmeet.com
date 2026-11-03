@@ -1,5 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { DurationSetting } from "@/components/duration-setting";
+import { FeelingSetting } from "@/components/feeling-setting";
 import { COOKIE, openSession } from "@/lib/session";
 
 export default async function ProfilePage() {
@@ -15,6 +17,8 @@ export default async function ProfilePage() {
         <p className="account-name">{session.name}</p>
         <p className="meta">Signed in with FSMeet</p>
       </section>
+      <FeelingSetting />
+      <DurationSetting />
       <form action="/api/auth/logout" method="post">
         <button className="button quiet" type="submit">
           Sign out

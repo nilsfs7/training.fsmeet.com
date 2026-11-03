@@ -4,8 +4,10 @@ import { useMemo, useState } from "react";
 import { ActivityChart } from "@/components/activity-chart";
 import { CategoryChart } from "@/components/category-chart";
 import { DateField } from "@/components/date-field";
+import { useDurationUnit } from "@/components/feeling-input";
 import { useSessions } from "@/components/use-sessions";
-import { activitySeries, isoDate, monthRange, shiftMonth, shiftWeek, shiftYear, summarize, weekRange, yearRange, type ActivitySpan, type PeriodSummary } from "@/lib/stats";
+import { activitySeries, durationSuffix, formatDuration, formatFeeling, isoDate, monthRange, shiftMonth, shiftWeek, shiftYear, summarize, weekRange, yearRange, type ActivitySpan, type PeriodSummary } from "@/lib/stats";
+import type { DurationUnit } from "@/lib/types";
 
 type PeriodId = "week" | "month" | "year" | "custom";
 
@@ -24,11 +26,13 @@ const SPANS: { id: ActivitySpan; label: string }[] = [
 
 const LINE_METRICS = [
   { id: "sessions", label: "Sessions" },
-  { id: "minutes", label: "Minutes" },
+  { id: "minutes", label: "Duration" },
+  { id: "feeling", label: "Feeling" },
 ] as const;
 
 export function StatsView() {
   const { sessions, ready } = useSessions();
+  const durationUnit = useDurationUnit();
   const today = new Date();
   const currentMonth = monthRange(today);
   const [period, setPeriod] = useState<PeriodId>("week");
@@ -73,13 +77,13 @@ export function StatsView() {
             ))}
           </div>
           {period === "week" ? (
-            <Period label="This week" summary={week} comparison={comparison(week.totalMinutes, previousWeek.totalMinutes, "week")} />
+            <Period label="This week" summary={week} unit={durationUnit} comparison={comparison(week.totalMinutes, previousWeek.totalMinutes, "week", durationUnit)} />
           ) : null}
           {period === "month" ? (
-            <Period label="This month" summary={month} comparison={comparison(month.totalMinutes, previousMonth.totalMinutes, "month")} />
+            <Period label="This month" summary={month} unit={durationUnit} comparison={comparison(month.totalMinutes, previousMonth.totalMinutes, "month", durationUnit)} />
           ) : null}
           {period === "year" ? (
-            <Period label="This year" summary={year} comparison={comparison(year.totalMinutes, previousYear.totalMinutes, "year")} />
+            <Period label="This year" summary={year} unit={durationUnit} comparison={comparison(year.totalMinutes, previousYear.totalMinutes, "year", durationUnit)} />
           ) : null}
           {period === "custom" ? (
             <section className="stat-block">
@@ -114,10 +118,11 @@ export function StatsView() {
               </div>
               {custom ? (
                 <>
-                  <p className="stat-number">{custom.totalMinutes}</p>
-                  <p className="stat-unit">min</p>
+                  <p className="stat-number">{formatDuration(custom.totalMinutes, durationUnit)}</p>
+                  <p className="stat-unit">{durationUnit}</p>
                   <p className="meta">{sessionLabel(custom.sessionCount)}</p>
-                  <CategoryChart totals={custom.byCategory} />
+                  <p className="meta">{feelingLabel(custom.averageFeeling)}</p>
+                  <CategoryChart totals={custom.byCategory} unit={durationUnit} />
                 </>
               ) : (
                 <p className="error">Choose a start date that is on or before the end date.</p>
@@ -152,7 +157,7 @@ export function StatsView() {
                 </button>
               ))}
             </div>
-            <ActivityChart points={series} metric={lineMetric} />
+            <ActivityChart points={series} metric={lineMetric} durationUnit={durationUnit} />
           </section>
         </>
       ) : (
@@ -162,15 +167,26 @@ export function StatsView() {
   );
 }
 
-function Period({ label, summary, comparison: delta }: { label: string; summary: PeriodSummary; comparison: string }) {
+function Period({
+  label,
+  summary,
+  unit,
+  comparison: delta,
+}: {
+  label: string;
+  summary: PeriodSummary;
+  unit: DurationUnit;
+  comparison: string;
+}) {
   return (
     <section className="stat-block">
       <p className="eyebrow">{label}</p>
-      <p className="stat-number">{summary.totalMinutes}</p>
-      <p className="stat-unit">min</p>
+      <p className="stat-number">{formatDuration(summary.totalMinutes, unit)}</p>
+      <p className="stat-unit">{unit}</p>
       <p className="meta">{sessionLabel(summary.sessionCount)}</p>
+      <p className="meta">{feelingLabel(summary.averageFeeling)}</p>
       <p className="delta">{delta}</p>
-      <CategoryChart totals={summary.byCategory} />
+      <CategoryChart totals={summary.byCategory} unit={unit} />
     </section>
   );
 }
@@ -179,8 +195,13 @@ function sessionLabel(count: number): string {
   return count === 1 ? "1 session" : `${count} sessions`;
 }
 
-function comparison(current: number, previous: number, period: "week" | "month" | "year"): string {
+function feelingLabel(average: number | null): string {
+  return average == null ? "No feeling" : `Feeling ${formatFeeling(average)}`;
+}
+
+function comparison(current: number, previous: number, period: "week" | "month" | "year", unit: DurationUnit): string {
   const delta = current - previous;
-  if (delta === 0) return `Same minutes as last ${period}`;
-  return `${Math.abs(delta)} min ${delta > 0 ? "more" : "less"} than last ${period}`;
+  const name = unit === "hours" ? "hours" : "minutes";
+  if (delta === 0) return `Same ${name} as last ${period}`;
+  return `${formatDuration(Math.abs(delta), unit)} ${durationSuffix(unit)} ${delta > 0 ? "more" : "less"} than last ${period}`;
 }

@@ -1,4 +1,5 @@
-import type { ActivityPoint } from "@/lib/stats";
+import { durationSuffix, feelingSeries, formatDuration, formatFeeling, type ActivityPoint } from "@/lib/stats";
+import type { DurationUnit } from "@/lib/types";
 
 const WIDTH = 320;
 const HEIGHT = 168;
@@ -7,14 +8,43 @@ const RIGHT = 312;
 const TOP = 16;
 const BOTTOM = 132;
 
-export function ActivityChart({ points, metric }: { points: ActivityPoint[]; metric: "sessions" | "minutes" }) {
-  const value = (point: ActivityPoint) => (metric === "sessions" ? point.sessions : point.minutes);
-  const max = Math.max(...points.map(value), 1);
-  const unit = metric === "sessions" ? (max === 1 ? "session" : "sessions") : "min";
-  const labels = labelIndexes(points.length);
-  const summary = points
-    .filter((point) => value(point) > 0)
-    .map((point) => `${point.label}: ${value(point)} ${metric === "sessions" ? "sessions" : "min"}`)
+export function ActivityChart({
+  points,
+  metric,
+  durationUnit = "hours",
+}: {
+  points: ActivityPoint[];
+  metric: "sessions" | "minutes" | "feeling";
+  durationUnit?: DurationUnit;
+}) {
+  const amount = (point: ActivityPoint): number | null => {
+    if (metric === "feeling") return point.feeling;
+    return metric === "sessions" ? point.sessions : point.minutes;
+  };
+  const plotted = metric === "feeling" ? feelingSeries(points) : points;
+  const max = metric === "feeling" ? 10 : Math.max(...plotted.map((point) => amount(point) ?? 0), 1);
+  const ratio = (point: ActivityPoint): number => {
+    const current = amount(point) ?? 0;
+    if (metric === "feeling") return (current - 1) / 9;
+    return current / max;
+  };
+  const unit = metric === "sessions" ? (max === 1 ? "session" : "sessions") : durationSuffix(durationUnit);
+  const labels = labelIndexes(plotted.length);
+  const summary = plotted
+    .filter((point) => {
+      const current = amount(point);
+      return current != null && current > 0;
+    })
+    .map((point) => {
+      const current = amount(point) ?? 0;
+      const rendered = metric === "feeling"
+        ? formatFeeling(current)
+        : metric === "minutes"
+          ? formatDuration(current, durationUnit)
+          : String(current);
+      const suffix = metric === "sessions" ? "sessions" : metric === "minutes" ? durationSuffix(durationUnit) : "";
+      return `${point.label}: ${rendered}${suffix ? ` ${suffix}` : ""}`;
+    })
     .join("; ");
 
   return (
@@ -23,13 +53,20 @@ export function ActivityChart({ points, metric }: { points: ActivityPoint[]; met
         const y = TOP + (BOTTOM - TOP) * (1 - level);
         return <line key={level} className="line-grid" x1={LEFT} x2={RIGHT} y1={y} y2={y} />;
       })}
-      <text className="line-scale" x={LEFT} y={12}>{max} {unit}</text>
-      <polyline className="line-series" points={path(points, (point) => value(point) / max)} />
+      <text className="line-scale" x={LEFT} y={12}>
+        {metric === "feeling" ? "10" : `${metric === "minutes" ? formatDuration(max, durationUnit) : max} ${unit}`}
+      </text>
+      {plotted.length > 1 ? <polyline className="line-series" points={line(plotted, ratio)} /> : null}
+      {metric === "feeling"
+        ? plotted.map((point, index) => (
+            <circle key={point.label + index} className="line-point" cx={xAt(index, plotted.length)} cy={yAt(ratio(point))} r="3" />
+          ))
+        : null}
       {labels.map((index) => {
-        const x = xAt(index, points.length);
+        const x = xAt(index, plotted.length);
         return (
-          <text key={points[index].label + index} className="line-label" x={x} y={154} textAnchor={anchor(index, points.length)}>
-            {points[index].label}
+          <text key={plotted[index].label + index} className="line-label" x={x} y={154} textAnchor={anchor(index, plotted.length)}>
+            {plotted[index].label}
           </text>
         );
       })}
@@ -37,14 +74,14 @@ export function ActivityChart({ points, metric }: { points: ActivityPoint[]; met
   );
 }
 
-function path(points: ActivityPoint[], ratio: (point: ActivityPoint) => number): string {
+function line(points: ActivityPoint[], ratio: (point: ActivityPoint) => number): string {
   return points
-    .map((point, index) => {
-      const x = xAt(index, points.length);
-      const y = BOTTOM - ratio(point) * (BOTTOM - TOP);
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
+    .map((point, index) => `${xAt(index, points.length).toFixed(1)},${yAt(ratio(point)).toFixed(1)}`)
     .join(" ");
+}
+
+function yAt(ratio: number): number {
+  return BOTTOM - ratio * (BOTTOM - TOP);
 }
 
 function xAt(index: number, count: number): number {

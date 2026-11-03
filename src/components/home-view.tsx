@@ -1,11 +1,13 @@
 "use client";
 
 import { CategoryChart } from "@/components/category-chart";
+import { useDurationUnit } from "@/components/feeling-input";
 import { useSessions } from "@/components/use-sessions";
-import { shiftWeek, summarize, topCategories, weekRange } from "@/lib/stats";
+import { durationSuffix, formatDuration, shiftWeek, summarize, topCategories, weekRange } from "@/lib/stats";
 
 export function HomeView() {
   const { sessions, pendingCount, ready } = useSessions();
+  const durationUnit = useDurationUnit();
   const today = new Date();
   const week = weekRange(today);
   const previous = weekRange(shiftWeek(today, -1));
@@ -18,8 +20,8 @@ export function HomeView() {
     <>
       <h1>This week</h1>
       <div className="stat-block">
-        <p className="stat-number">{ready ? current.totalMinutes : ""}</p>
-        <p className="stat-unit">min</p>
+        <p className="stat-number">{ready ? formatDuration(current.totalMinutes, durationUnit) : ""}</p>
+        <p className="stat-unit">{durationUnit}</p>
         {ready ? (
           <>
             <p className="meta">
@@ -29,8 +31,8 @@ export function HomeView() {
             {last.totalMinutes > 0 || current.totalMinutes > 0 ? (
               <p className="delta">
                 {delta === 0
-                  ? "Same minutes as last week"
-                  : `${Math.abs(delta)} min ${delta > 0 ? "more" : "less"} than last week`}
+                  ? `Same ${durationUnit} as last week`
+                  : `${formatDuration(Math.abs(delta), durationUnit)} ${durationSuffix(durationUnit)} ${delta > 0 ? "more" : "less"} than last week`}
               </p>
             ) : null}
           </>
@@ -41,7 +43,7 @@ export function HomeView() {
       {ready && leaders.length > 0 ? <p className="meta">Most logged: {leaders.join(", ")}</p> : null}
       {ready ? (
         <section className="category-list" aria-label="Categories this week">
-          <CategoryChart totals={current.byCategory} />
+          <CategoryChart totals={current.byCategory} unit={durationUnit} />
         </section>
       ) : null}
       {pendingCount > 0 ? (
