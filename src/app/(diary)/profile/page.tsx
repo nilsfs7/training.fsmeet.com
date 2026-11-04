@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { CategorySetting } from "@/components/category-setting";
 import { DurationSetting } from "@/components/duration-setting";
 import { FeelingSetting } from "@/components/feeling-setting";
 import { COOKIE, openSession } from "@/lib/session";
@@ -19,6 +20,7 @@ export default async function ProfilePage() {
       </section>
       <FeelingSetting />
       <DurationSetting />
+      <CategorySetting />
       <form action="/api/auth/logout" method="post">
         <button className="button quiet" type="submit">
           Sign out

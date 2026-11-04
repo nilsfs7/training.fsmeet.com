@@ -339,6 +339,48 @@ input {
 
 .setting-switch .chip { flex: 1; }
 
+.category-editor {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+}
+
+.category-item { display: grid; gap: 0.4rem; }
+
+.category-warning {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.category-row,
+.category-editor + .button {
+  scroll-margin-bottom: 7rem;
+}
+
+.category-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.category-row input { flex: 1; }
+
+.category-remove {
+  flex: 0 0 auto;
+  min-width: 5.5rem;
+  min-height: 3.5rem;
+  padding: 0 0.85rem;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-weight: 650;
+}
+
+.category-remove:disabled { opacity: 0.45; }
+
 .period-switch {
   display: flex;
   gap: 0.5rem;

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { readAccountSettings, writeDurationUnit, writeFeelingInput } from "@/lib/account";
+import { readAccountSettings, writeCategories, writeDurationUnit, writeFeelingInput } from "@/lib/account";
 import { readRequestSession } from "@/lib/session";
-import { isDurationUnit, isFeelingInput } from "@/lib/types";
+import { isDurationUnit, isFeelingInput, parseUserCategories } from "@/lib/types";
 
 export const runtime = "nodejs";
 
@@ -19,10 +19,11 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   const session = await readRequestSession(request);
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const body = (await request.json().catch(() => null)) as { feelingInput?: unknown; durationUnit?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as { feelingInput?: unknown; durationUnit?: unknown; categories?: unknown } | null;
   const hasFeeling = body != null && Object.prototype.hasOwnProperty.call(body, "feelingInput");
   const hasDuration = body != null && Object.prototype.hasOwnProperty.call(body, "durationUnit");
-  if (!body || (!hasFeeling && !hasDuration)) {
+  const hasCategories = body != null && Object.prototype.hasOwnProperty.call(body, "categories");
+  if (!body || (!hasFeeling && !hasDuration && !hasCategories)) {
     return NextResponse.json({ error: "Setting is invalid" }, { status: 400 });
   }
   if (hasFeeling && !isFeelingInput(body.feelingInput)) {
@@ -31,6 +32,10 @@ export async function PUT(request: Request) {
   if (hasDuration && !isDurationUnit(body.durationUnit)) {
     return NextResponse.json({ error: "Duration unit is invalid" }, { status: 400 });
   }
+  const categories = hasCategories ? parseUserCategories(body.categories) : null;
+  if (hasCategories && !categories) {
+    return NextResponse.json({ error: "Categories are invalid" }, { status: 400 });
+  }
   try {
     if (hasFeeling && isFeelingInput(body.feelingInput)) {
       const saved = await writeFeelingInput(session.uid, body.feelingInput);
@@ -38,6 +43,10 @@ export async function PUT(request: Request) {
     }
     if (hasDuration && isDurationUnit(body.durationUnit)) {
       const saved = await writeDurationUnit(session.uid, body.durationUnit);
+      if (!saved) return NextResponse.json({ error: "account missing" }, { status: 404 });
+    }
+    if (categories) {
+      const saved = await writeCategories(session.uid, categories);
       if (!saved) return NextResponse.json({ error: "account missing" }, { status: 404 });
     }
     return NextResponse.json(await readAccountSettings(session.uid));

@@ -69,6 +69,19 @@ describe("summarize", () => {
     assert.equal(summary.averageFeeling, null);
   });
 
+  it("counts only the categories the user still has", () => {
+    const summary = summarize(
+      [session({ trainedOn: "2026-11-01", durationMinutes: 45, categories: ["lowers", "transitions"] })],
+      "2026-11-01",
+      "2026-11-01",
+      ["lowers", "cfeetwork"],
+    );
+    assert.equal(summary.byCategory.lowers, 45);
+    assert.equal(summary.byCategory.cfeetwork, 0);
+    assert.equal(summary.byCategory.transitions, undefined);
+    assert.equal(summary.totalMinutes, 45);
+  });
+
   it("averages only sessions that have a feeling", () => {
     const summary = summarize(
       [

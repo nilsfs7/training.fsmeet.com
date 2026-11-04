@@ -4,7 +4,7 @@ import { FeelingInputProvider } from "@/components/feeling-input";
 import { Shell } from "@/components/shell";
 import { readAccountSettings } from "@/lib/account";
 import { COOKIE, openSession } from "@/lib/session";
-import type { DurationUnit, FeelingInput } from "@/lib/types";
+import { defaultCategories, type DurationUnit, type FeelingInput, type UserCategory } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -14,18 +14,20 @@ export default async function DiaryLayout({ children }: { children: React.ReactN
   if (!session) redirect("/login");
   let feelingInput: FeelingInput = "emoji";
   let durationUnit: DurationUnit = "hours";
+  let categories: UserCategory[] = defaultCategories();
   let confirmed = false;
   try {
     const settings = await readAccountSettings(session.uid);
     feelingInput = settings.feelingInput;
     durationUnit = settings.durationUnit;
+    categories = settings.categories;
     confirmed = true;
   } catch (error) {
     console.error(error);
   }
   return (
     <Shell name={session.name}>
-      <FeelingInputProvider initial={feelingInput} durationUnit={durationUnit} confirmed={confirmed}>
+      <FeelingInputProvider initial={feelingInput} durationUnit={durationUnit} categories={categories} confirmed={confirmed}>
         {children}
       </FeelingInputProvider>
     </Shell>

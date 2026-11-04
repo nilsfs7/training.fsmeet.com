@@ -54,7 +54,7 @@ The interface is a dark, matte fitness-style diary: modern, minimal, athletic, p
 | UI-06 | Accent | Lime `#C7FF4D`, used sparingly | `must` | `decided` |
 | UI-07 | Type | Inter or Geist as the only primary face | `must` | `decided` |
 | UI-08 | Numbers | Large bold numerals for statistics | `must` | `decided` |
-| UI-09 | Charts | Radar chart of the five categories, and lime line charts of session counts (W-07), minutes (W-08), and feeling (W-09) | `must` | `decided` |
+| UI-09 | Charts | Radar chart of the user's categories (CAT-06), and lime line charts of session counts (W-07), minutes (W-08), and feeling (W-09) | `must` | `decided` |
 | UI-10 | Controls | Large touch targets, slightly rounded | `must` | `decided` |
 | UI-11 | Motion | Subtle, fast transitions. No excessive animation | `must` | `decided` |
 | UI-12 | Surface style | Matte, inspired by modern fitness apps | `must` | `decided` |
@@ -139,7 +139,7 @@ Registered OAuth client:
 
 ## Categories
 
-These five categories are the training taxonomy for the dashboard and for session entry.
+These five categories are the default training taxonomy for the dashboard and for session entry.
 
 | ID | Category | Status |
 | --- | --- | --- |
@@ -148,8 +148,9 @@ These five categories are the training taxonomy for the dashboard and for sessio
 | CAT-03 | sitdown | `decided` |
 | CAT-04 | transitions | `decided` |
 | CAT-05 | acrobatics | `decided` |
+| CAT-06 | The user can customize the category list in account settings | `decided` |
 
-Display order is lowers, uppers, sitdown, acrobatics, transitions.
+Display order of the defaults is lowers, uppers, sitdown, acrobatics, transitions. The user can rename a category, remove one while at least three remain, and add one while at most five exist. A rename keeps the same category on past sessions and only changes the visible name. Removing a category first warns that logged training for it can be lost, then hides it from logging and from the radar. A past session keeps that category, and History shows the stored id once the name is gone. The list is stored on the user in MariaDB. New categories are added at the end.
 
 ## Product shape
 
@@ -172,7 +173,7 @@ Primary navigation has three sections. Other screens exist, and they are not pri
 | NAV-05 | Edit Training | Change a saved session. Same fields as capture: date, one duration, categories, optional feeling, optional note | Additional | `must` | `decided` |
 | NAV-06 | Profile / Settings | Account and app settings | Additional | `must` | `decided` |
 
-`NAV-04` is satisfied by a control on Home or by a floating plus button. Either form is acceptable. The visible label is `Log Training`. Statistics and Profile / Settings do not show the floating plus button. Profile / Settings includes the feeling entry preference (S-09) and the duration unit (W-10). Anything else on that screen is still `open` (Q-13). A saved session can be deleted from Edit Training (S-07).
+`NAV-04` is satisfied by a control on Home or by a floating plus button. Either form is acceptable. The visible label is `Log Training`. Statistics and Profile / Settings do not show the floating plus button. Profile / Settings includes the feeling entry preference (S-09), the duration unit (W-10), and the category list (CAT-06). Anything else on that screen is still `open` (Q-13). A saved session can be deleted from Edit Training (S-07).
 
 ## Functional requirements
 
@@ -184,7 +185,7 @@ Logging is after the session for many athletes. Entry must stay short enough to 
 | H-02 | The next action on Home is logging a session | `must` | `decided` | Via NAV-04 |
 | S-01 | Capture a session with as little input as possible | `must` | `decided` | After training, including with no network (OFF-02) |
 | S-02 | Session has one duration | `must` | `decided` | Not split per category |
-| S-03 | Session has one or more categories, multi-select | `must` | `decided` | CAT-01 … CAT-05. The same duration applies to every selected category |
+| S-03 | Session has one or more categories, multi-select | `must` | `decided` | Chosen from the user's list (CAT-06). Defaults are CAT-01 … CAT-05. The same duration applies to every selected category |
 | S-04 | Session note is optional | `must` | `decided` | Skipping it must not add a step |
 | S-05 | Session has a date so it can be logged after the fact and shown in History | `must` | `decided` | Defaults to today |
 | S-06 | A signed-in user can save a session within 10 seconds of opening the app | `must` | `decided` | Date, duration, categories. Note and feeling stay optional |
@@ -192,7 +193,7 @@ Logging is after the session for many athletes. Entry must stay short enough to 
 | S-08 | A session can record how the training felt | `must` | `decided` | Optional. Five levels, shown as emojis: red, orange, yellow, green, dark green. They are scores on the 1–10 scale: red 1, orange 3, yellow 5, green 8, dark green 10. Skipping it stores null. History shows the emoji for these five scores |
 | S-09 | Feeling can also be a score from 1 to 10 | `must` | `decided` | 1 is the worst, 10 is the best. Optional, same as S-08. Any integer in that range. The emoji levels are 1, 3, 5, 8 and 10. Account settings choose the control. The choice is stored on the user in MariaDB. Default is the five emojis. A session without a feeling stays null. History shows the numeral for 2, 4, 6, 7 and 9 |
 | D-01 | Home shows training time | `must` | `decided` | Large numerals (UI-08). Not a separate main area |
-| D-02 | Home shows the five categories | `must` | `decided` | A session counts toward each selected category. Headline training time counts each session once |
+| D-02 | Home shows the user's categories | `must` | `decided` | Default is the five categories. A session counts toward each selected category. Headline training time counts each session once |
 | C-01 | History shows past training sessions | `must` | `decided` | NAV-02. Includes the calendar of past sessions |
 | W-01 | Statistics shows the week | `must` | `decided` | NAV-03. Charts (UI-09). Same counting rule as D-02. Includes the session count (W-03) |
 | W-02 | Statistics shows the month | `must` | `decided` | NAV-03. Charts (UI-09). Same counting rule as D-02. Includes the session count (W-03) |
