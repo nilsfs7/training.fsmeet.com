@@ -46,6 +46,12 @@ export async function writeLocalSession(session: LocalSession): Promise<void> {
   db.close();
 }
 
+export async function clearLocalSessions(): Promise<void> {
+  const db = await openDb();
+  await requestToPromise(db.transaction(STORE, "readwrite").objectStore(STORE).clear());
+  db.close();
+}
+
 export async function removeLocalSession(id: string): Promise<void> {
   const db = await openDb();
   await requestToPromise(db.transaction(STORE, "readwrite").objectStore(STORE).delete(id));

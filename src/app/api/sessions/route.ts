@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { readRequestSession } from "@/lib/session";
-import { deleteSessions, listSessions, parseSession, saveSessions, SessionInputError } from "@/lib/sessions";
+import { deleteAllSessions, deleteSessions, listSessions, parseSession, saveSessions, SessionInputError } from "@/lib/sessions";
 
 export const runtime = "nodejs";
 
@@ -18,7 +18,16 @@ export async function GET(request: Request) {
 export async function DELETE(request: Request) {
   const session = await readRequestSession(request);
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const body = (await request.json().catch(() => null)) as { ids?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as { ids?: unknown; all?: unknown } | null;
+  if (body?.all === true) {
+    try {
+      await deleteAllSessions(session.uid);
+      return NextResponse.json({ ok: true });
+    } catch (error) {
+      console.error(error);
+      return NextResponse.json({ error: "database unavailable" }, { status: 503 });
+    }
+  }
   if (!body || !Array.isArray(body.ids) || body.ids.some((id) => typeof id !== "string")) {
     return NextResponse.json({ error: "Expected sessions" }, { status: 400 });
   }

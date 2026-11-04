@@ -106,6 +106,11 @@ export async function listSessions(userId: string): Promise<Session[]> {
   return [...byId.values()];
 }
 
+export async function deleteAllSessions(userId: string): Promise<void> {
+  await ensureSchema();
+  await getPool().query("DELETE FROM sessions WHERE user_id = ?", [userId]);
+}
+
 export async function deleteSessions(userId: string, ids: string[]): Promise<void> {
   if (ids.length < 1) throw new SessionInputError("Expected sessions");
   const unique = [...new Set(ids)];
