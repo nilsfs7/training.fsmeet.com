@@ -1,20 +1,23 @@
 "use client";
 
 import { CategoryChart } from "@/components/category-chart";
-import { useDurationUnit } from "@/components/feeling-input";
+import { useCategories, useDurationUnit } from "@/components/feeling-input";
 import { useSessions } from "@/components/use-sessions";
 import { durationSuffix, formatDuration, shiftWeek, summarize, topCategories, weekRange } from "@/lib/stats";
+import { categoryName } from "@/lib/types";
 
 export function HomeView() {
   const { sessions, pendingCount, ready } = useSessions();
   const durationUnit = useDurationUnit();
+  const categories = useCategories();
+  const categoryIds = categories.map((category) => category.id);
   const today = new Date();
   const week = weekRange(today);
   const previous = weekRange(shiftWeek(today, -1));
-  const current = summarize(sessions, week.start, week.end);
-  const last = summarize(sessions, previous.start, previous.end);
+  const current = summarize(sessions, week.start, week.end, categoryIds);
+  const last = summarize(sessions, previous.start, previous.end, categoryIds);
   const delta = current.totalMinutes - last.totalMinutes;
-  const leaders = topCategories(current.byCategory);
+  const leaders = topCategories(current.byCategory, categoryIds).map((id) => categoryName(id, categories));
 
   return (
     <>
@@ -43,7 +46,7 @@ export function HomeView() {
       {ready && leaders.length > 0 ? <p className="meta">Most logged: {leaders.join(", ")}</p> : null}
       {ready ? (
         <section className="category-list" aria-label="Categories this week">
-          <CategoryChart totals={current.byCategory} unit={durationUnit} />
+          <CategoryChart categories={categories} totals={current.byCategory} unit={durationUnit} />
         </section>
       ) : null}
       {pendingCount > 0 ? (

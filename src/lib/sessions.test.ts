@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { parseSession, SessionInputError } from "./sessions";
+import { defaultCategories, parseUserCategories } from "./types";
 
 const base = {
   id: "11111111-1111-4111-8111-111111111111",
@@ -40,5 +41,35 @@ describe("parseSession feeling", () => {
     assert.throws(() => parseSession({ ...base, feeling: 0 }), SessionInputError);
     assert.throws(() => parseSession({ ...base, feeling: 11 }), SessionInputError);
     assert.throws(() => parseSession({ ...base, feeling: 1.5 }), SessionInputError);
+  });
+
+  it("accepts a custom category id", () => {
+    assert.deepEqual(parseSession({ ...base, categories: ["c1234abcd"] }).categories, ["c1234abcd"]);
+  });
+});
+
+describe("parseUserCategories", () => {
+  it("keeps the five defaults", () => {
+    const categories = defaultCategories();
+    assert.deepEqual(parseUserCategories(categories)?.map((category) => category.id), [
+      "lowers",
+      "uppers",
+      "sitdown",
+      "acrobatics",
+      "transitions",
+    ]);
+  });
+
+  it("rejects fewer than three, more than five, and duplicate names", () => {
+    const [first, second, third] = defaultCategories();
+    assert.equal(parseUserCategories([first, second]), null);
+    assert.equal(parseUserCategories([...defaultCategories(), { id: "cextra123", label: "extra" }]), null);
+    assert.equal(parseUserCategories([first, second, { id: third.id, label: " Lowers " }]), null);
+    assert.equal(parseUserCategories([first, second, { ...third, label: "" }]), null);
+    assert.deepEqual(parseUserCategories([{ ...first, label: " Feet " }, second, third]), [
+      { id: "lowers", label: "Feet" },
+      { id: "uppers", label: "uppers" },
+      { id: "sitdown", label: "sitdown" },
+    ]);
   });
 });

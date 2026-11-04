@@ -4,10 +4,10 @@ import { useMemo, useState } from "react";
 import { ActivityChart } from "@/components/activity-chart";
 import { CategoryChart } from "@/components/category-chart";
 import { DateField } from "@/components/date-field";
-import { useDurationUnit } from "@/components/feeling-input";
+import { useCategories, useDurationUnit } from "@/components/feeling-input";
 import { useSessions } from "@/components/use-sessions";
 import { activitySeries, durationSuffix, formatDuration, formatFeeling, isoDate, monthRange, shiftMonth, shiftWeek, shiftYear, summarize, weekRange, yearRange, type ActivitySpan, type PeriodSummary } from "@/lib/stats";
-import type { DurationUnit } from "@/lib/types";
+import type { DurationUnit, UserCategory } from "@/lib/types";
 
 type PeriodId = "week" | "month" | "year" | "custom";
 
@@ -33,6 +33,8 @@ const LINE_METRICS = [
 export function StatsView() {
   const { sessions, ready } = useSessions();
   const durationUnit = useDurationUnit();
+  const categories = useCategories();
+  const categoryIds = categories.map((category) => category.id);
   const today = new Date();
   const currentMonth = monthRange(today);
   const [period, setPeriod] = useState<PeriodId>("week");
@@ -42,20 +44,21 @@ export function StatsView() {
   const [customEnd, setCustomEnd] = useState(isoDate(today));
   const [openDate, setOpenDate] = useState<"start" | "end" | null>(null);
   const marked = useMemo(() => new Set(sessions.map((session) => session.trainedOn)), [sessions]);
-  const week = summarize(sessions, weekRange(today).start, weekRange(today).end);
-  const month = summarize(sessions, currentMonth.start, currentMonth.end);
+  const week = summarize(sessions, weekRange(today).start, weekRange(today).end, categoryIds);
+  const month = summarize(sessions, currentMonth.start, currentMonth.end, categoryIds);
   const previousMonthAnchor = shiftMonth(today, -1);
   const previousMonth = summarize(
     sessions,
     monthRange(previousMonthAnchor).start,
     monthRange(previousMonthAnchor).end,
+    categoryIds,
   );
-  const previousWeek = summarize(sessions, weekRange(shiftWeek(today, -1)).start, weekRange(shiftWeek(today, -1)).end);
-  const year = summarize(sessions, yearRange(today).start, yearRange(today).end);
+  const previousWeek = summarize(sessions, weekRange(shiftWeek(today, -1)).start, weekRange(shiftWeek(today, -1)).end, categoryIds);
+  const year = summarize(sessions, yearRange(today).start, yearRange(today).end, categoryIds);
   const previousYearAnchor = shiftYear(today, -1);
-  const previousYear = summarize(sessions, yearRange(previousYearAnchor).start, yearRange(previousYearAnchor).end);
+  const previousYear = summarize(sessions, yearRange(previousYearAnchor).start, yearRange(previousYearAnchor).end, categoryIds);
   const customReady = /^\d{4}-\d{2}-\d{2}$/.test(customStart) && /^\d{4}-\d{2}-\d{2}$/.test(customEnd) && customStart <= customEnd;
-  const custom = customReady ? summarize(sessions, customStart, customEnd) : null;
+  const custom = customReady ? summarize(sessions, customStart, customEnd, categoryIds) : null;
   const series = activitySeries(sessions, span, today);
 
   return (
@@ -77,13 +80,13 @@ export function StatsView() {
             ))}
           </div>
           {period === "week" ? (
-            <Period label="This week" summary={week} unit={durationUnit} comparison={comparison(week.totalMinutes, previousWeek.totalMinutes, "week", durationUnit)} />
+            <Period label="This week" summary={week} unit={durationUnit} categories={categories} comparison={comparison(week.totalMinutes, previousWeek.totalMinutes, "week", durationUnit)} />
           ) : null}
           {period === "month" ? (
-            <Period label="This month" summary={month} unit={durationUnit} comparison={comparison(month.totalMinutes, previousMonth.totalMinutes, "month", durationUnit)} />
+            <Period label="This month" summary={month} unit={durationUnit} categories={categories} comparison={comparison(month.totalMinutes, previousMonth.totalMinutes, "month", durationUnit)} />
           ) : null}
           {period === "year" ? (
-            <Period label="This year" summary={year} unit={durationUnit} comparison={comparison(year.totalMinutes, previousYear.totalMinutes, "year", durationUnit)} />
+            <Period label="This year" summary={year} unit={durationUnit} categories={categories} comparison={comparison(year.totalMinutes, previousYear.totalMinutes, "year", durationUnit)} />
           ) : null}
           {period === "custom" ? (
             <section className="stat-block">
@@ -122,7 +125,7 @@ export function StatsView() {
                   <p className="stat-unit">{durationUnit}</p>
                   <p className="meta">{sessionLabel(custom.sessionCount)}</p>
                   <p className="meta">{feelingLabel(custom.averageFeeling)}</p>
-                  <CategoryChart totals={custom.byCategory} unit={durationUnit} />
+                  <CategoryChart categories={categories} totals={custom.byCategory} unit={durationUnit} />
                 </>
               ) : (
                 <p className="error">Choose a start date that is on or before the end date.</p>
@@ -171,11 +174,13 @@ function Period({
   label,
   summary,
   unit,
+  categories,
   comparison: delta,
 }: {
   label: string;
   summary: PeriodSummary;
   unit: DurationUnit;
+  categories: readonly UserCategory[];
   comparison: string;
 }) {
   return (
@@ -186,7 +191,7 @@ function Period({
       <p className="meta">{sessionLabel(summary.sessionCount)}</p>
       <p className="meta">{feelingLabel(summary.averageFeeling)}</p>
       <p className="delta">{delta}</p>
-      <CategoryChart totals={summary.byCategory} unit={unit} />
+      <CategoryChart categories={categories} totals={summary.byCategory} unit={unit} />
     </section>
   );
 }

@@ -1,6 +1,6 @@
-import { CATEGORIES, type Category, type DurationUnit, type Session } from "@/lib/types";
+import { CATEGORIES, type DurationUnit, type Session } from "@/lib/types";
 
-export type CategoryTotals = Record<Category, number>;
+export type CategoryTotals = Record<string, number>;
 
 export type PeriodSummary = {
   totalMinutes: number;
@@ -10,14 +10,8 @@ export type PeriodSummary = {
   byCategory: CategoryTotals;
 };
 
-function emptyCategories(): CategoryTotals {
-  return {
-    lowers: 0,
-    uppers: 0,
-    sitdown: 0,
-    transitions: 0,
-    acrobatics: 0,
-  };
+function emptyCategories(categoryIds: readonly string[]): CategoryTotals {
+  return Object.fromEntries(categoryIds.map((category) => [category, 0]));
 }
 
 export function isoDate(date: Date): string {
@@ -58,8 +52,8 @@ export function yearRange(anchor: Date): { start: string; end: string } {
   return { start: `${year}-01-01`, end: `${year}-12-31` };
 }
 
-export function summarize(sessions: Session[], start: string, end: string): PeriodSummary {
-  const byCategory = emptyCategories();
+export function summarize(sessions: Session[], start: string, end: string, categoryIds: readonly string[] = CATEGORIES): PeriodSummary {
+  const byCategory = emptyCategories(categoryIds);
   const days = new Set<string>();
   let totalMinutes = 0;
   let sessionCount = 0;
@@ -76,7 +70,7 @@ export function summarize(sessions: Session[], start: string, end: string): Peri
       feelingCount += 1;
     }
     for (const category of session.categories) {
-      byCategory[category] += session.durationMinutes;
+      if (category in byCategory) byCategory[category] += session.durationMinutes;
     }
   }
 
@@ -104,10 +98,10 @@ export function formatFeeling(value: number): string {
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
 }
 
-export function topCategories(totals: CategoryTotals): Category[] {
-  const top = Math.max(...CATEGORIES.map((category) => totals[category]));
+export function topCategories(totals: CategoryTotals, categoryIds: readonly string[] = CATEGORIES): string[] {
+  const top = Math.max(...categoryIds.map((category) => totals[category] ?? 0));
   if (top <= 0) return [];
-  return CATEGORIES.filter((category) => totals[category] === top);
+  return categoryIds.filter((category) => totals[category] === top);
 }
 
 export function shiftWeek(anchor: Date, weeks: number): Date {

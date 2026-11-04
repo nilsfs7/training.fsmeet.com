@@ -6,7 +6,7 @@ import { FeelingChoices, ScoreChoices } from "@/components/feeling-face";
 import { useFeelingInput } from "@/components/feeling-input";
 import { useSessions } from "@/components/use-sessions";
 import { isoDate } from "@/lib/stats";
-import { CATEGORIES, type Category, type FeelingScore, type Session } from "@/lib/types";
+import { type FeelingScore, type Session, type UserCategory } from "@/lib/types";
 
 const PRESETS = [15, 30, 45, 60, 90, 120];
 
@@ -23,8 +23,8 @@ export function SessionForm({
 }) {
   const [trainedOn, setTrainedOn] = useState(() => initial?.trainedOn ?? isoDate(new Date()));
   const [duration, setDuration] = useState(() => (initial ? String(initial.durationMinutes) : ""));
-  const [categories, setCategories] = useState<Category[]>(() => initial?.categories ?? []);
-  const { feelingInput } = useFeelingInput();
+  const [categories, setCategories] = useState<string[]>(() => initial?.categories ?? []);
+  const { feelingInput, categories: taxonomy } = useFeelingInput();
   const [feeling, setFeeling] = useState<FeelingScore | null>(() => initial?.feeling ?? null);
   const [note, setNote] = useState(() => initial?.note ?? "");
   const [dateOpen, setDateOpen] = useState(false);
@@ -35,7 +35,13 @@ export function SessionForm({
   const durationMinutes = Number(duration);
   const ready = Number.isInteger(durationMinutes) && durationMinutes >= 1 && durationMinutes <= 1440 && categories.length > 0;
 
-  function toggle(category: Category) {
+  const known = new Set(taxonomy.map((category) => category.id));
+  const choices: UserCategory[] = [
+    ...taxonomy,
+    ...categories.filter((id) => !known.has(id)).map((id) => ({ id, label: id })),
+  ];
+
+  function toggle(category: string) {
     setCategories((current) =>
       current.includes(category) ? current.filter((item) => item !== category) : [...current, category],
     );
@@ -102,15 +108,15 @@ export function SessionForm({
           ))}
         </div>
         <div className="chips" role="group" aria-label="Categories">
-          {CATEGORIES.map((category) => (
+          {choices.map((category) => (
             <button
-              key={category}
+              key={category.id}
               type="button"
               className="chip"
-              aria-pressed={categories.includes(category)}
-              onClick={() => toggle(category)}
+              aria-pressed={categories.includes(category.id)}
+              onClick={() => toggle(category.id)}
             >
-              {category}
+              {category.label}
             </button>
           ))}
         </div>
