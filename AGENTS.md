@@ -173,7 +173,7 @@ Primary navigation has three sections. Other screens exist, and they are not pri
 | NAV-05 | Edit Training | Change a saved session. Same fields as capture: date, one duration, categories, optional feeling, optional note | Additional | `must` | `decided` |
 | NAV-06 | Profile / Settings | Account and app settings | Additional | `must` | `decided` |
 
-`NAV-04` is satisfied by a control on Home or by a floating plus button. Either form is acceptable. The visible label is `Log Training`. Statistics and Profile / Settings do not show the floating plus button. Profile / Settings includes the feeling entry preference (S-09), the duration unit (W-10), and the category list (CAT-06). Anything else on that screen is still `open` (Q-13). A saved session can be deleted from Edit Training (S-07).
+`NAV-04` is satisfied by a control on Home or by a floating plus button. Either form is acceptable. The visible label is `Log Training`. Statistics and Profile / Settings do not show the floating plus button. Profile / Settings includes the feeling entry preference (S-09), the duration unit (W-10), the category list (CAT-06), and resetting all training sessions (S-10). Anything else on that screen is still `open` (Q-13). A saved session can be deleted from Edit Training (S-07).
 
 ## Functional requirements
 
@@ -192,6 +192,7 @@ Logging is after the session for many athletes. Entry must stay short enough to 
 | S-07 | A saved session can be deleted | `must` | `decided` | From Edit Training. Leaves the phone immediately, including offline. MariaDB drops it on the next sync |
 | S-08 | A session can record how the training felt | `must` | `decided` | Optional. Five levels, shown as emojis: red, orange, yellow, green, dark green. They are scores on the 1–10 scale: red 1, orange 3, yellow 5, green 8, dark green 10. Skipping it stores null. History shows the emoji for these five scores |
 | S-09 | Feeling can also be a score from 1 to 10 | `must` | `decided` | 1 is the worst, 10 is the best. Optional, same as S-08. Any integer in that range. The emoji levels are 1, 3, 5, 8 and 10. Account settings choose the control. The choice is stored on the user in MariaDB. Default is the five emojis. A session without a feeling stays null. History shows the numeral for 2, 4, 6, 7 and 9 |
+| S-10 | Profile / Settings can delete all training sessions for the signed-in user | `must` | `decided` | The control asks once more before deleting. Sessions leave the phone immediately, including offline. MariaDB drops every session for that user on the next sync. Categories, feeling entry, and the duration unit stay |
 | D-01 | Home shows training time | `must` | `decided` | Large numerals (UI-08). Not a separate main area |
 | D-02 | Home shows the user's categories | `must` | `decided` | Default is the five categories. A session counts toward each selected category. Headline training time counts each session once |
 | C-01 | History shows past training sessions | `must` | `decided` | NAV-02. Includes the calendar of past sessions |

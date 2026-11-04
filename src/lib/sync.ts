@@ -1,7 +1,43 @@
-import { mergeRemoteSessions, readLocalSessions, removeLocalSession, writeLocalSession } from "@/lib/idb";
+import { clearLocalSessions, mergeRemoteSessions, readLocalSessions, removeLocalSession, writeLocalSession } from "@/lib/idb";
 import type { LocalSession, Session } from "@/lib/types";
 
+const RESET_KEY = "fs-training-reset";
+
 let flushQueue: Promise<void> = Promise.resolve();
+
+function resetPending(): boolean {
+  try {
+    return localStorage.getItem(RESET_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markReset(): void {
+  try {
+    localStorage.setItem(RESET_KEY, "1");
+  } catch {
+    // The server delete still runs while this page is open.
+  }
+}
+
+function clearReset(): void {
+  try {
+    localStorage.removeItem(RESET_KEY);
+  } catch {
+    // The sessions are already gone on the server.
+  }
+}
+
+async function deleteAllRemoteSessions(): Promise<boolean> {
+  const response = await fetch("/api/sessions", {
+    method: "DELETE",
+    credentials: "same-origin",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ all: true }),
+  });
+  return response.ok;
+}
 
 export function flushSessions(): Promise<void> {
   const run = flushQueue.then(flushOnce);
@@ -14,6 +50,10 @@ export function flushSessions(): Promise<void> {
 
 async function flushOnce(): Promise<void> {
   if (!navigator.onLine) return;
+  if (resetPending()) {
+    if (!(await deleteAllRemoteSessions())) return;
+    clearReset();
+  }
   const local = await readLocalSessions();
   const pending = local.filter((session) => session.pending && !session.deleted);
   const deleted = local.filter((session) => session.deleted);
@@ -51,6 +91,23 @@ async function flushOnce(): Promise<void> {
   for (const session of deleted) {
     if (!remoteIds.has(session.id)) await removeLocalSession(session.id);
   }
+}
+
+export function resetTraining(): Promise<void> {
+  const run = flushQueue.then(resetOnce);
+  flushQueue = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
+
+async function resetOnce(): Promise<void> {
+  await clearLocalSessions();
+  markReset();
+  if (!navigator.onLine) return;
+  if (!(await deleteAllRemoteSessions())) throw new Error("Could not delete training.");
+  clearReset();
 }
 
 export async function deleteSession(session: LocalSession): Promise<void> {
