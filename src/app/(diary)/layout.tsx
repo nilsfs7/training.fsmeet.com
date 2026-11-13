@@ -15,19 +15,21 @@ export default async function DiaryLayout({ children }: { children: React.ReactN
   let feelingInput: FeelingInput = "emoji";
   let durationUnit: DurationUnit = "hours";
   let categories: UserCategory[] = defaultCategories();
+  let homeDays = 7;
   let confirmed = false;
   try {
     const settings = await readAccountSettings(session.uid);
     feelingInput = settings.feelingInput;
     durationUnit = settings.durationUnit;
     categories = settings.categories;
+    homeDays = settings.homeDays;
     confirmed = true;
   } catch (error) {
     console.error(error);
   }
   return (
     <Shell name={session.name}>
-      <FeelingInputProvider initial={feelingInput} durationUnit={durationUnit} categories={categories} confirmed={confirmed}>
+      <FeelingInputProvider initial={feelingInput} durationUnit={durationUnit} categories={categories} homeDays={homeDays} confirmed={confirmed}>
         {children}
       </FeelingInputProvider>
     </Shell>

@@ -1,19 +1,22 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { parseUserCategories, type DurationUnit, type FeelingInput, type UserCategory } from "@/lib/types";
+import { isHomeDays, parseUserCategories, type DurationUnit, type FeelingInput, type UserCategory } from "@/lib/types";
 
 const FEELING_KEY = "fs-feeling-input";
 const DURATION_KEY = "fs-duration-unit";
 const CATEGORIES_KEY = "fs-categories";
+const HOME_DAYS_KEY = "fs-home-days";
 
 const FeelingInputContext = createContext<{
   feelingInput: FeelingInput;
   durationUnit: DurationUnit;
   categories: UserCategory[];
+  homeDays: number;
   save: (value: FeelingInput) => Promise<void>;
   saveDuration: (value: DurationUnit) => Promise<void>;
   saveCategories: (value: UserCategory[]) => Promise<void>;
+  saveHomeDays: (value: number) => Promise<void>;
 } | null>(null);
 
 function readCache(): FeelingInput | null {
@@ -67,40 +70,64 @@ function writeCategoriesCache(value: UserCategory[]) {
   }
 }
 
+function readHomeDaysCache(): number | null {
+  try {
+    const value = Number(localStorage.getItem(HOME_DAYS_KEY));
+    return isHomeDays(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeHomeDaysCache(value: number) {
+  try {
+    localStorage.setItem(HOME_DAYS_KEY, String(value));
+  } catch {
+    // The database remains the stored preference.
+  }
+}
+
 export function FeelingInputProvider({
   initial,
   durationUnit: initialDuration,
   categories: initialCategories,
+  homeDays: initialHomeDays,
   confirmed,
   children,
 }: {
   initial: FeelingInput;
   durationUnit: DurationUnit;
   categories: UserCategory[];
+  homeDays: number;
   confirmed: boolean;
   children: React.ReactNode;
 }) {
   const [feelingInput, setFeelingInput] = useState<FeelingInput>(initial);
   const [durationUnit, setDurationUnit] = useState<DurationUnit>(initialDuration);
   const [categories, setCategories] = useState<UserCategory[]>(initialCategories);
+  const [homeDays, setHomeDays] = useState(initialHomeDays);
 
   useEffect(() => {
     if (confirmed) {
       setFeelingInput(initial);
       setDurationUnit(initialDuration);
       setCategories(initialCategories);
+      setHomeDays(initialHomeDays);
       writeCache(initial);
       writeDurationCache(initialDuration);
       writeCategoriesCache(initialCategories);
+      writeHomeDaysCache(initialHomeDays);
       return;
     }
     const cached = readCache();
     const cachedDuration = readDurationCache();
     const cachedCategories = readCategoriesCache();
+    const cachedHomeDays = readHomeDaysCache();
     if (cached) setFeelingInput(cached);
     if (cachedDuration) setDurationUnit(cachedDuration);
     if (cachedCategories) setCategories(cachedCategories);
-  }, [confirmed, initial, initialDuration, initialCategories]);
+    if (cachedHomeDays) setHomeDays(cachedHomeDays);
+  }, [confirmed, initial, initialDuration, initialCategories, initialHomeDays]);
 
   async function save(value: FeelingInput) {
     const response = await fetch("/api/settings", {
@@ -138,8 +165,20 @@ export function FeelingInputProvider({
     writeCategoriesCache(value);
   }
 
+  async function saveHomeDays(value: number) {
+    const response = await fetch("/api/settings", {
+      method: "PUT",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ homeDays: value }),
+    });
+    if (!response.ok) throw new Error("Could not save this setting.");
+    setHomeDays(value);
+    writeHomeDaysCache(value);
+  }
+
   return (
-    <FeelingInputContext.Provider value={{ feelingInput, durationUnit, categories, save, saveDuration, saveCategories }}>
+    <FeelingInputContext.Provider value={{ feelingInput, durationUnit, categories, homeDays, save, saveDuration, saveCategories, saveHomeDays }}>
       {children}
     </FeelingInputContext.Provider>
   );
@@ -157,4 +196,8 @@ export function useDurationUnit() {
 
 export function useCategories() {
   return useFeelingInput().categories;
+}
+
+export function useHomeDays() {
+  return useFeelingInput().homeDays;
 }

@@ -78,4 +78,5 @@ async function migrate(): Promise<void> {
   await db.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS feeling_input VARCHAR(16) NOT NULL DEFAULT 'emoji'");
   await db.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS duration_unit VARCHAR(16) NOT NULL DEFAULT 'hours'");
   await db.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS categories TEXT NULL");
+  await db.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS home_days SMALLINT NOT NULL DEFAULT 7");
 }

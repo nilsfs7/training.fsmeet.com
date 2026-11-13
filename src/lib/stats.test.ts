@@ -9,6 +9,7 @@ import {
   monthRange,
   summarize,
   topCategories,
+  recentDaysRange,
   weekRange,
   yearRange,
 } from "./stats";
@@ -25,6 +26,20 @@ function session(partial: Partial<Session> & Pick<Session, "trainedOn" | "durati
     createdAt: partial.createdAt ?? "2026-11-01T12:00:00.000Z",
   };
 }
+
+describe("recentDaysRange", () => {
+  it("ends today and includes the six days before it", () => {
+    const range = recentDaysRange(new Date(2026, 10, 10), 7);
+    assert.equal(range.start, "2026-11-04");
+    assert.equal(range.end, "2026-11-10");
+  });
+
+  it("uses a chosen length up to 30 days", () => {
+    const range = recentDaysRange(new Date(2026, 10, 10), 30);
+    assert.equal(range.start, "2026-10-12");
+    assert.equal(range.end, "2026-11-10");
+  });
+});
 
 describe("weekRange", () => {
   it("starts on Monday for a Sunday", () => {
@@ -143,29 +158,52 @@ describe("activitySeries", () => {
   ];
   const today = new Date(2026, 10, 2);
 
-  it("counts each day of the current week", () => {
+  it("counts the current week through today", () => {
     const series = activitySeries(sessions, "week", today);
-    assert.equal(series.length, 7);
-    assert.deepEqual(series.map((point) => point.label), ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
+    assert.deepEqual(series.map((point) => point.label), ["Mon"]);
     assert.equal(series[0].sessions, 2);
     assert.equal(series[0].minutes, 60);
     assert.equal(series[0].feeling, 6);
-    assert.equal(series.slice(1).every((point) => point.sessions === 0 && point.feeling == null), true);
     assert.deepEqual(feelingSeries(series).map((point) => point.label), ["Mon"]);
   });
 
-  it("counts each day of the current month", () => {
+  it("keeps past days without a session and drops days after today", () => {
+    const friday = new Date(2026, 10, 13);
+    const series = activitySeries(
+      [session({ trainedOn: "2026-11-09", durationMinutes: 30, categories: ["lowers"] })],
+      "week",
+      friday,
+    );
+    assert.deepEqual(
+      series.map((point) => point.label),
+      ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    );
+    assert.equal(series[0].sessions, 1);
+    assert.equal(series[1].sessions, 0);
+    assert.equal(series[4].sessions, 0);
+  });
+
+  it("keeps the whole week when today is Sunday", () => {
+    const series = activitySeries([], "week", new Date(2026, 10, 15));
+    assert.deepEqual(
+      series.map((point) => point.label),
+      ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    );
+  });
+
+  it("counts each day of the current month through today", () => {
     const series = activitySeries(sessions, "month", today);
-    assert.equal(series.length, 30);
+    assert.equal(series.length, 2);
     assert.equal(series[0].label, "1");
     assert.equal(series[1].sessions, 2);
     assert.equal(series[1].minutes, 60);
     assert.equal(series[0].sessions, 0);
   });
 
-  it("counts each month of the current year", () => {
+  it("counts each month of the current year through the current month", () => {
     const series = activitySeries(sessions, "year", today);
-    assert.equal(series.length, 12);
+    assert.equal(series.length, 11);
+    assert.equal(series.at(-1)?.label, "Nov");
     assert.equal(series[2].label, "Mar");
     assert.equal(series[2].sessions, 1);
     assert.equal(series[2].minutes, 60);
@@ -178,6 +216,12 @@ describe("activitySeries", () => {
       feelingSeries(series).map((point) => point.label),
       ["Mar", "Nov"],
     );
+  });
+
+  it("includes December only once that month has started", () => {
+    const series = activitySeries([], "year", new Date(2026, 11, 1));
+    assert.equal(series.length, 12);
+    assert.equal(series[11].label, "Dec");
   });
 });
 
