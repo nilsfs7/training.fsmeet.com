@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { parseSession, SessionInputError } from "./sessions";
-import { defaultCategories, parseUserCategories } from "./types";
+import { defaultCategories, isHomeDays, parseUserCategories } from "./types";
 
 const base = {
   id: "11111111-1111-4111-8111-111111111111",
@@ -45,6 +45,16 @@ describe("parseSession feeling", () => {
 
   it("accepts a custom category id", () => {
     assert.deepEqual(parseSession({ ...base, categories: ["c1234abcd"] }).categories, ["c1234abcd"]);
+  });
+});
+
+describe("isHomeDays", () => {
+  it("accepts 7 through 30", () => {
+    assert.equal(isHomeDays(7), true);
+    assert.equal(isHomeDays(30), true);
+    assert.equal(isHomeDays(6), false);
+    assert.equal(isHomeDays(31), false);
+    assert.equal(isHomeDays(7.5), false);
   });
 });
 

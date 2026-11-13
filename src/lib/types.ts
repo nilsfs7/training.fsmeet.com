@@ -110,6 +110,10 @@ export function isDurationUnit(value: unknown): value is DurationUnit {
   return value === "hours" || value === "minutes";
 }
 
+export function isHomeDays(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 7 && value <= 30;
+}
+
 export function feelingFromStored(value: string | null): FeelingScore | null {
   if (!value) return null;
   const legacy = LEGACY_FEELINGS[value];

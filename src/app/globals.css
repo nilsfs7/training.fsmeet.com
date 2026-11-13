@@ -339,6 +339,22 @@ input {
 
 .setting-switch .chip { flex: 1; }
 
+.day-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.day-stepper input {
+  text-align: center;
+  font-size: 1.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.day-stepper .chip { min-width: 3.5rem; }
+
 .category-editor {
   display: grid;
   gap: 0.75rem;

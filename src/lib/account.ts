@@ -1,12 +1,18 @@
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { ensureSchema, getPool } from "@/lib/db";
-import { defaultCategories, isDurationUnit, isFeelingInput, parseUserCategories, type DurationUnit, type FeelingInput, type UserCategory } from "@/lib/types";
+import { defaultCategories, isDurationUnit, isFeelingInput, isHomeDays, parseUserCategories, type DurationUnit, type FeelingInput, type UserCategory } from "@/lib/types";
 
 export type AccountSettings = {
   feelingInput: FeelingInput;
   durationUnit: DurationUnit;
   categories: UserCategory[];
+  homeDays: number;
 };
+
+function homeDaysFromStored(value: unknown): number {
+  const days = typeof value === "number" ? value : Number(value);
+  return isHomeDays(days) ? days : 7;
+}
 
 function categoriesFromStored(value: unknown): UserCategory[] {
   if (value == null || value === "") return defaultCategories();
@@ -21,7 +27,7 @@ function categoriesFromStored(value: unknown): UserCategory[] {
 export async function readAccountSettings(userId: string): Promise<AccountSettings> {
   await ensureSchema();
   const [rows] = await getPool().query<RowDataPacket[]>(
-    "SELECT feeling_input, duration_unit, categories FROM users WHERE id = ?",
+    "SELECT feeling_input, duration_unit, categories, home_days FROM users WHERE id = ?",
     [userId],
   );
   const feeling = rows[0]?.feeling_input;
@@ -30,6 +36,7 @@ export async function readAccountSettings(userId: string): Promise<AccountSettin
     feelingInput: isFeelingInput(feeling) ? feeling : "emoji",
     durationUnit: isDurationUnit(duration) ? duration : "hours",
     categories: categoriesFromStored(rows[0]?.categories),
+    homeDays: homeDaysFromStored(rows[0]?.home_days),
   };
 }
 
@@ -42,6 +49,12 @@ export async function writeFeelingInput(userId: string, feelingInput: FeelingInp
 export async function writeCategories(userId: string, categories: UserCategory[]): Promise<boolean> {
   await ensureSchema();
   const [result] = await getPool().query<ResultSetHeader>("UPDATE users SET categories = ? WHERE id = ?", [JSON.stringify(categories), userId]);
+  return result.affectedRows > 0;
+}
+
+export async function writeHomeDays(userId: string, homeDays: number): Promise<boolean> {
+  await ensureSchema();
+  const [result] = await getPool().query<ResultSetHeader>("UPDATE users SET home_days = ? WHERE id = ?", [homeDays, userId]);
   return result.affectedRows > 0;
 }
 

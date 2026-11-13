@@ -32,6 +32,11 @@ export function addDays(iso: string, days: number): string {
   return isoDate(date);
 }
 
+export function recentDaysRange(anchor: Date, days: number): { start: string; end: string } {
+  const end = isoDate(anchor);
+  return { start: addDays(end, 1 - days), end };
+}
+
 export function weekRange(anchor: Date): { start: string; end: string } {
   const day = anchor.getDay();
   const mondayOffset = day === 0 ? -6 : 1 - day;
@@ -130,11 +135,13 @@ export type ActivityPoint = {
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export function activitySeries(sessions: Session[], span: ActivitySpan, today: Date): ActivityPoint[] {
+  const todayIso = isoDate(today);
   if (span === "week") {
     const { start, end } = weekRange(today);
+    const last = end < todayIso ? end : todayIso;
     const points: ActivityPoint[] = [];
     let iso = start;
-    for (let index = 0; iso <= end; index += 1) {
+    for (let index = 0; iso <= last; index += 1) {
       points.push(bucket(sessions, iso, iso, WEEKDAYS[index]));
       iso = addDays(iso, 1);
     }
@@ -143,14 +150,15 @@ export function activitySeries(sessions: Session[], span: ActivitySpan, today: D
 
   if (span === "month") {
     const { start, end } = monthRange(today);
+    const last = end < todayIso ? end : todayIso;
     const points: ActivityPoint[] = [];
-    for (let iso = start; iso <= end; iso = addDays(iso, 1)) {
+    for (let iso = start; iso <= last; iso = addDays(iso, 1)) {
       points.push(bucket(sessions, iso, iso, String(Number(iso.slice(8)))));
     }
     return points;
   }
 
-  return Array.from({ length: 12 }, (_, month) => {
+  return Array.from({ length: today.getMonth() + 1 }, (_, month) => {
     const anchor = new Date(today.getFullYear(), month, 1);
     const range = monthRange(anchor);
     const label = anchor.toLocaleDateString("en-GB", { month: "short" });

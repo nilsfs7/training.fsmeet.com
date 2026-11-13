@@ -173,7 +173,7 @@ Primary navigation has three sections. Other screens exist, and they are not pri
 | NAV-05 | Edit Training | Change a saved session. Same fields as capture: date, one duration, categories, optional feeling, optional note | Additional | `must` | `decided` |
 | NAV-06 | Profile / Settings | Account and app settings | Additional | `must` | `decided` |
 
-`NAV-04` is satisfied by a control on Home or by a floating plus button. Either form is acceptable. The visible label is `Log Training`. Statistics and Profile / Settings do not show the floating plus button. Profile / Settings includes the feeling entry preference (S-09), the duration unit (W-10), the category list (CAT-06), and resetting all training sessions (S-10). Anything else on that screen is still `open` (Q-13). A saved session can be deleted from Edit Training (S-07).
+`NAV-04` is satisfied by a control on Home or by a floating plus button. Either form is acceptable. The visible label is `Log Training`. Statistics and Profile / Settings do not show the floating plus button. Profile / Settings includes the feeling entry preference (S-09), the duration unit (W-10), the category list (CAT-06), the home review length (H-03), and resetting all training sessions (S-10). Anything else on that screen is still `open` (Q-13). A saved session can be deleted from Edit Training (S-07).
 
 ## Functional requirements
 
@@ -181,8 +181,9 @@ Logging is after the session for many athletes. Entry must stay short enough to 
 
 | ID | Requirement | Priority | Status | Note |
 | --- | --- | --- | --- | --- |
-| H-01 | Home shows how active the user has been, without an extra tap | `must` | `decided` | Home is NAV-01. Serves OBJ-01 |
+| H-01 | Home shows how active the user has been, without an extra tap | `must` | `decided` | Home is NAV-01. Serves OBJ-01. The window is the recent days from H-03 |
 | H-02 | The next action on Home is logging a session | `must` | `decided` | Via NAV-04 |
+| H-03 | Home reviews a rolling number of recent days | `must` | `decided` | Ends today and includes the days before it. Default is 7. Account settings choose any integer from 7 to 30. Stored on the user in MariaDB. The headline, the comparison, and the category chart use this window. The comparison is the previous window of the same length. Statistics keeps the calendar week |
 | S-01 | Capture a session with as little input as possible | `must` | `decided` | After training, including with no network (OFF-02) |
 | S-02 | Session has one duration | `must` | `decided` | Not split per category |
 | S-03 | Session has one or more categories, multi-select | `must` | `decided` | Chosen from the user's list (CAT-06). Defaults are CAT-01 … CAT-05. The same duration applies to every selected category |
@@ -202,8 +203,8 @@ Logging is after the session for many athletes. Entry must stay short enough to 
 | W-04 | The user can choose a custom date range | `must` | `decided` | Start and end date. Same minutes, session count, and category chart |
 | W-05 | Statistics shows one period at a time | `must` | `decided` | The user switches between week, month, year, and custom so the screen stays short |
 | W-06 | Statistics shows the year | `must` | `decided` | NAV-03. Calendar year. Charts (UI-09). Same counting rule as D-02. Includes the session count (W-03) |
-| W-07 | Statistics shows how many sessions happened over time | `must` | `decided` | Lime line chart. 1 week and 1 month are per day, 1 year is per month. The year axis labels every other month, starting with January. Each session counts once |
-| W-08 | Statistics shows total training minutes over time | `must` | `decided` | Lime line chart. Same spans as W-07. The user switches between the session chart (W-07), this chart, and the feeling chart (W-09), so only one line chart is visible. A session's duration is counted once |
+| W-07 | Statistics shows how many sessions happened over time | `must` | `decided` | Lime line chart. 1 week and 1 month are per day, 1 year is per month. The series ends on the current day: future days of the week and month are left out, and the year stops at the current month. Days that have already passed stay, including days with no session. The year axis labels every other month, starting with January. Each session counts once |
+| W-08 | Statistics shows total training minutes over time | `must` | `decided` | Lime line chart. Same spans as W-07, including the end on the current day. The user switches between the session chart (W-07), this chart, and the feeling chart (W-09), so only one line chart is visible. A session's duration is counted once |
 | W-09 | Statistics shows how training felt | `must` | `decided` | The selected period shows the average feeling. Only sessions with a feeling count; a session without one stays out of the average. The lime line chart uses the same spans as W-07. Each point is the average feeling in that day or month, on a fixed scale from 1 to 10. Days or months with no session, and days or months whose sessions have no feeling, are left out. The remaining points form one continuous line |
 | W-10 | Duration can be shown in hours or minutes | `must` | `decided` | Account settings choose the unit. Stored on the user in MariaDB. Default is hours. Applies wherever training time is shown: Home, History, and Statistics, including the category chart and the duration line chart (W-08). The Home and Statistics headlines spell the unit out as hours or minutes. Logging and editing still enter minutes |
 

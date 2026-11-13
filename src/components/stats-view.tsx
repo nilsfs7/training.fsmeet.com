@@ -160,7 +160,7 @@ export function StatsView() {
                 </button>
               ))}
             </div>
-            <ActivityChart points={series} metric={lineMetric} durationUnit={durationUnit} />
+            <ActivityChart points={series} metric={lineMetric} span={span} durationUnit={durationUnit} />
           </section>
         </>
       ) : (

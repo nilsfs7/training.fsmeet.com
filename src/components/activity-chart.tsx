@@ -1,4 +1,4 @@
-import { durationSuffix, feelingSeries, formatDuration, formatFeeling, type ActivityPoint } from "@/lib/stats";
+import { durationSuffix, feelingSeries, formatDuration, formatFeeling, type ActivityPoint, type ActivitySpan } from "@/lib/stats";
 import type { DurationUnit } from "@/lib/types";
 
 const WIDTH = 320;
@@ -11,10 +11,12 @@ const BOTTOM = 132;
 export function ActivityChart({
   points,
   metric,
+  span,
   durationUnit = "hours",
 }: {
   points: ActivityPoint[];
   metric: "sessions" | "minutes" | "feeling";
+  span: ActivitySpan;
   durationUnit?: DurationUnit;
 }) {
   const amount = (point: ActivityPoint): number | null => {
@@ -29,7 +31,7 @@ export function ActivityChart({
     return current / max;
   };
   const unit = metric === "sessions" ? (max === 1 ? "session" : "sessions") : durationSuffix(durationUnit);
-  const labels = labelIndexes(plotted.length);
+  const labels = labelIndexes(plotted.length, span === "year" && metric !== "feeling");
   const summary = plotted
     .filter((point) => {
       const current = amount(point);
@@ -95,8 +97,12 @@ function anchor(index: number, count: number): "start" | "middle" | "end" {
   return "middle";
 }
 
-function labelIndexes(count: number): number[] {
-  if (count === 12) return [0, 2, 4, 6, 8, 10];
+function labelIndexes(count: number, alternate: boolean): number[] {
+  if (alternate || count === 12) {
+    const indexes: number[] = [];
+    for (let index = 0; index < count; index += 2) indexes.push(index);
+    return indexes;
+  }
   if (count <= 12) return Array.from({ length: count }, (_, index) => index);
   const step = Math.ceil((count - 1) / 5);
   const indexes: number[] = [];

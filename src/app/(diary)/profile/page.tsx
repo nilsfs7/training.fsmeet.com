@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { CategorySetting } from "@/components/category-setting";
 import { ResetTraining } from "@/components/reset-training";
 import { DurationSetting } from "@/components/duration-setting";
+import { HomeDaysSetting } from "@/components/home-days-setting";
 import { FeelingSetting } from "@/components/feeling-setting";
 import { COOKIE, openSession } from "@/lib/session";
 
@@ -21,6 +22,7 @@ export default async function ProfilePage() {
       </section>
       <FeelingSetting />
       <DurationSetting />
+      <HomeDaysSetting />
       <CategorySetting />
       <ResetTraining />
       <form action="/api/auth/logout" method="post">
